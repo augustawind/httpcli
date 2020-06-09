@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d47855bae330e3d739a6d829b02ad673c5494e9bb39b682c5547154b7a597623
+-- hash: 89f7386b8b095edf2e80e7bb93e95627631da4931e5739ed4d9373356a78fa6b
 
 name:           httpcli
 version:        0.1.0.0
@@ -47,6 +47,7 @@ library
     , parsec ==3.1.14.0
     , req ==3.2.0
     , text ==1.2.4.0
+    , unordered-containers ==0.2.10.0
     , yaml ==0.11.4.0
   default-language: Haskell2010
 
@@ -70,6 +71,7 @@ executable httpcli-exe
     , parsec ==3.1.14.0
     , req ==3.2.0
     , text ==1.2.4.0
+    , unordered-containers ==0.2.10.0
     , yaml ==0.11.4.0
   default-language: Haskell2010
 
@@ -94,5 +96,6 @@ test-suite httpcli-test
     , parsec ==3.1.14.0
     , req ==3.2.0
     , text ==1.2.4.0
+    , unordered-containers ==0.2.10.0
     , yaml ==0.11.4.0
   default-language: Haskell2010

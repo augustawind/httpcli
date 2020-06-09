@@ -6,7 +6,7 @@ food:
     method: put
     headers: |
       {{#ct_headers}}
-        {{key}}: application/json
+        - {{key}}: application/json
       {{/ct_headers}}
     body: |
       name: {{food_name}}

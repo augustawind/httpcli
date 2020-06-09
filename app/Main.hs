@@ -3,7 +3,7 @@
 module Main where
 
 import qualified Data.Aeson                    as Aeson
-import qualified Data.Map                      as Map
+import qualified Data.HashMap.Strict           as Map
 import           Data.Text                      ( unpack )
 import           System.FilePath                ( (</>) )
 import           Text.Mustache
