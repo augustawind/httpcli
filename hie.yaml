@@ -1,0 +1,9 @@
+cradle:
+  stack:
+    - path: "./src/"
+      component: "httpcli:lib"
+    - path: "./app/Main.hs"
+      component: "httpcli:exe:httpcli-exe"
+    - path: "./test/"
+      component: "httpcli:test:httpcli-test"
+

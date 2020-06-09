@@ -1,0 +1,36 @@
+# GROUP: food-related requests
+food:
+  # REQUEST: edit food in the database
+  update:
+    url: "{{server}}/food/{{food_id}}"
+    method: put
+    headers: |
+      {{#ct_headers}}
+        {{key}}: application/json
+      {{/ct_headers}}
+    body: |
+      name: {{food_name}}
+      rarity: {{food_rarity}}
+      texture: mushy
+  # SUB-GROUP: watermelon-specific food requests
+  watermelon:
+    # REQUEST: eat watermelons
+    eat:
+      url: "{{server}}/watermelon/eat"
+      method: post
+      params:
+        messy: "{{messy}}"
+      json: |
+        quantity: {{quantity}}
+        {{#secret}}
+        extra_juicy: true
+        {{/secret}}
+    # REQUEST: throw a watermelon
+    throw:
+      url: "{{server}}/watermelon/throw?messy={{messy}}"
+      method: get
+      headers: |
+        Content-Type: application/json
+        {{#use_jwt}}
+        Authorization: "JWT {{jwt_token}}"
+        {{/use_jwt}}
