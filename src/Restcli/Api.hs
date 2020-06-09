@@ -11,6 +11,24 @@ import           Text.Mustache
 import           Text.Parsec.Error              ( ParseError )
 import           Text.URI                       ( URI(..) )
 
+newtype API = API RequestGroup
+
+newtype RequestGroup = RequestGroup [ReqNode]
+
+data ReqNode where
+    Req ::(HttpBody body) => Request body -> ReqNode
+    Group ::RequestGroup -> ReqNode
+
+data Request body = Request
+    { reqUrl :: URI
+    , reqMethod :: Method
+    , reqHeaders :: RequestHeaders
+    , reqQuery :: QueryText
+    , reqBody :: body
+    }
+
+type Env = Map String Yaml.Value
+
 readApiTemplate :: FilePath -> IO Template
 readApiTemplate path = do
     let (apiDir, apiFileName) = splitFileName path
