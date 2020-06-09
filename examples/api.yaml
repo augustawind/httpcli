@@ -18,7 +18,7 @@ food:
     eat:
       url: "{{server}}/watermelon/eat"
       method: post
-      params:
+      query:
         messy: "{{messy}}"
       json: |
         quantity: {{quantity}}

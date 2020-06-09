@@ -17,13 +17,13 @@ main = do
         opts <- runCli
 
         -- Compile API template.
-        tmpl <- readApiFile $ apiFile opts
+        tmpl <- readApiTemplate $ apiFile opts
         putStrLn $ "\n" ++ replicate 25 '-' ++ "\nTEMPLATE\n"
         print tmpl
 
         -- Parse Env file if given, otherwise use a blank env.
         env <- case envFile opts of
-                Just path -> readEnvFile path
+                Just path -> readEnv path
                 Nothing   -> return Map.empty
         putStrLn $ "\n" ++ replicate 25 '-' ++ "\nENV\n"
         print env

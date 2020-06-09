@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f6d527de9a6ee10e4aebba75db55779159b92516ecccf871991f91dc3dc5cdd8
+-- hash: d47855bae330e3d739a6d829b02ad673c5494e9bb39b682c5547154b7a597623
 
 name:           httpcli
 version:        0.1.0.0
@@ -40,6 +40,8 @@ library
     , base >=4.7 && <5
     , containers ==0.6.2.1
     , filepath ==1.4.2.1
+    , http-types ==0.12.3
+    , modern-uri ==0.3.2.0
     , mustache ==2.3.1
     , optparse-applicative ==0.15.1.0
     , parsec ==3.1.14.0
@@ -60,7 +62,9 @@ executable httpcli-exe
     , base >=4.7 && <5
     , containers ==0.6.2.1
     , filepath ==1.4.2.1
+    , http-types ==0.12.3
     , httpcli
+    , modern-uri ==0.3.2.0
     , mustache ==2.3.1
     , optparse-applicative ==0.15.1.0
     , parsec ==3.1.14.0
@@ -82,7 +86,9 @@ test-suite httpcli-test
     , base >=4.7 && <5
     , containers ==0.6.2.1
     , filepath ==1.4.2.1
+    , http-types ==0.12.3
     , httpcli
+    , modern-uri ==0.3.2.0
     , mustache ==2.3.1
     , optparse-applicative ==0.15.1.0
     , parsec ==3.1.14.0
