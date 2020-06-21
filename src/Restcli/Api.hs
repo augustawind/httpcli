@@ -22,15 +22,12 @@ import           Restcli.Internal.Decodings
 import           Restcli.Types
 
 instance HttpBody RequestBody where
-    getRequestBody NoReqBody          = getRequestBody Req.NoReqBody
-    getRequestBody (ReqBodyJson v   ) = getRequestBody $ Req.ReqBodyJson v
-    getRequestBody (ReqBodyFile path) = getRequestBody $ Req.ReqBodyFile path
+    getRequestBody NoReqBody       = getRequestBody Req.NoReqBody
+    getRequestBody (ReqBodyJson v) = getRequestBody $ Req.ReqBodyJson v
 
     getRequestContentType NoReqBody = getRequestContentType Req.NoReqBody
     getRequestContentType (ReqBodyJson v) =
         getRequestContentType $ Req.ReqBodyJson v
-    getRequestContentType (ReqBodyFile path) =
-        getRequestContentType $ Req.ReqBodyFile path
 
 readApiTemplate :: FilePath -> IO Template
 readApiTemplate path = do

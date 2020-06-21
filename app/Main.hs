@@ -12,6 +12,7 @@ import           Text.Pretty.Simple
 
 import           Restcli.Api
 import           Restcli.Cli
+import           Restcli.Internal.Encodings
 
 main :: IO ()
 main = do
@@ -47,8 +48,8 @@ main = do
                                         { outputOptionsIndentAmount = 2
                                         }
                                 val
-                        -- putStrLn $ "\n" ++ replicate 25 '-' ++ "\n...AS YAML:\n"
-                        -- putStrLn . C.unpack $ Yaml.encode val
+                        putStrLn $ "\n" ++ replicate 25 '-' ++ "\n...AS YAML:\n"
+                        putStrLn . C.unpack $ Yaml.encode val
 
         return ()
 

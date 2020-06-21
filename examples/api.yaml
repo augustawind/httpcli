@@ -2,8 +2,8 @@
 food:
   # REQUEST: edit food in the database
   update:
-    url: "{{server}}/food/{{food_id}}"
     method: put
+    url: "{{server}}/food/{{food_id}}"
     headers: |
       {{#ct_headers}}
       {{key}}: application/json
@@ -16,10 +16,10 @@ food:
   watermelon:
     # REQUEST: eat watermelons
     eat:
-      url: "{{server}}/watermelon/eat"
       method: post
+      url: "{{server}}/watermelon/eat"
       query:
-        messy: "{{messy}}"
+        - messy: "{{messy}}"
       json: |
         quantity: {{quantity}}
         {{#secret}}
@@ -27,8 +27,11 @@ food:
         {{/secret}}
     # REQUEST: throw a watermelon
     throw:
-      url: "{{server}}/watermelon/throw?messy={{messy}}"
       method: get
+      url: "{{server}}/watermelon/throw?messy={{messy}}"
+      query:
+        - speed: "5"
+        - target: "dave"
       headers: |
         Content-Type: application/json
         {{#use_jwt}}

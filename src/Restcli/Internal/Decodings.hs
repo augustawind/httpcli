@@ -5,7 +5,6 @@ module Restcli.Internal.Decodings
     ()
 where
 
-import           Control.Monad.Catch
 import           Data.Aeson
 import           Data.Aeson.Types               ( Parser )
 import qualified Data.ByteString.Char8         as C
@@ -52,10 +51,8 @@ instance FromJSON Request where
 
         -- TODO: allow for no-value keys
         reqQuery <- do
-            src <-
-                v .:? "query" .!= Map.empty :: Parser
-                    (HashMap Text (Maybe Text))
-            return $ Map.toList src
+            src <- v .:? "query" .!= [] :: Parser [HashMap Text (Maybe Text)]
+            return . concatMap Map.toList $ src
 
         -- TODO: allow for other body types
         reqBody <- do
