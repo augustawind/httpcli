@@ -52,6 +52,13 @@ instance ToJSON RequestHeaders where
 instance ToJSON RequestBody where
     toJSON (ReqBodyJson body) = String . decodeUtf8 . Yaml.encode $ body
 
+instance ToJSON RequestAttr where
+    toJSON (ReqMethod  method ) = toJSON method
+    toJSON (ReqUrl     url    ) = toJSON url
+    toJSON (ReqQuery   query  ) = toJSON query
+    toJSON (ReqHeaders headers) = toJSON headers
+    toJSON (ReqBody    body   ) = toJSON body
+
 toTitleCase :: Text -> Text
 toTitleCase word = case T.uncons word of
     Just (first, rest) -> toTitle first `T.cons` T.map toLower rest

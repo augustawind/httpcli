@@ -15,7 +15,7 @@ import           Restcli.Types
 
 data Error
     = APIParseError String String
-    | APILookupError [Text] APIComponent (Maybe APIComponent)
+    | APILookupError [Text] APIComponentKind (Maybe APIComponentKind)
     | TemplateError Parsec.Error.ParseError
     | ParsecError (ParseErrorBundle Text Void)
     | YamlError Yaml.ParseException
