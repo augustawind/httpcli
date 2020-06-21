@@ -4,40 +4,22 @@
 module Restcli.Api where
 
 import           Data.Aeson
-import           Data.Text.Encoding             ( encodeUtf8 )
-import           Data.List                      ( intercalate )
+import           Data.Either
 import           Data.HashMap.Strict            ( HashMap )
 import qualified Data.HashMap.Strict           as Map
+import           Data.List                      ( intercalate )
 import           Data.Maybe
 import           Data.Text                      ( Text )
+import           Data.Text.Encoding             ( encodeUtf8 )
 import qualified Data.Yaml                     as Yaml
 import           Network.HTTP.Req               ( HttpBody(..) )
 import qualified Network.HTTP.Req              as Req
-import           Network.HTTP.Types
 import           System.FilePath                ( splitFileName )
 import           Text.Mustache
 import           Text.Parsec.Error              ( ParseError )
-import           Text.URI                       ( URI(..) )
 
-newtype API = API (HashMap Text ReqNode)
-    deriving (Eq, Show)
-
-data ReqNode = Req Request | ReqGroup (HashMap Text ReqNode)
-    deriving (Eq, Show)
-
-data Request = Request
-    { reqUrl :: URI
-    , reqMethod :: Method
-    , reqHeaders :: RequestHeaders
-    , reqQuery :: QueryText
-    , reqBody :: RequestBody
-    } deriving (Eq, Show)
-
-data RequestBody
-    = NoReqBody
-    | ReqBodyJson String
-    | ReqBodyFile FilePath
-    deriving (Eq, Show)
+import           Restcli.Internal.Decodings
+import           Restcli.Types
 
 instance HttpBody RequestBody where
     getRequestBody NoReqBody          = getRequestBody Req.NoReqBody
@@ -58,7 +40,7 @@ readApiTemplate path = do
         Left  err  -> error (show err)
         Right tmpl -> return tmpl
 
-parseAPI :: Template -> Env -> API
+parseAPI :: Template -> Env -> Either String API
 parseAPI tmpl env =
     let rendered = encodeUtf8 $ substitute tmpl env
         decoded =
@@ -66,20 +48,41 @@ parseAPI tmpl env =
                         Yaml.ParseException
                         (HashMap Text Yaml.Value)
     in  case decoded of
-            Left  err -> error (show err)
-            Right val -> API $ Map.map parseNode val
+            Left  err -> Left $ show err
+            Right val -> API <$> mapM parseNode val
 
-requestKeys :: [Text]
-requestKeys = ["url", "method", "headers", "query", "json", "file"]
-
-parseNode :: Value -> ReqNode
+parseNode :: Value -> Either String ReqNode
 parseNode (Object kvs)
-    | any (`Map.member` kvs) requestKeys = Req $ parseRequest kvs
-    | otherwise                          = ReqGroup $ Map.map parseNode kvs
-parseNode value = error "this should never happen"
+    | -- If any keys in the object are reqKeys, treat it as a Request.
+      any (`Map.member` kvs) reqKeys = Req <$> parseRequest kvs
+    | -- Otherwise, it's treated as another ReqGroup.
+      otherwise                      = ReqGroup <$> mapM parseNode kvs
+parseNode value =
+    error $ "unexpected node found while parsing API file: " ++ show value
 
-parseRequest :: HashMap Text Value -> Request
-parseRequest = undefined
+parseRequest :: HashMap Text Value -> Either String Request
+parseRequest kvs
+    | not . null $ missingKeys
+    = Left $ "required keys missing from request: " ++ show missingKeys
+    | not . null $ extraKeys
+    = Left $ "invalid keys found in request: " ++ show extraKeys
+    | otherwise
+    -- = Right . fromJust . decode . encode $ kvs
+    = let encoded = Yaml.encode kvs
+          decoded =
+                  Yaml.decodeEither' encoded :: Either Yaml.ParseException Request
+      in  case decoded of
+              Left  err -> Left $ show err
+              Right req -> Right req
+  where
+    missingKeys = filter (not . (`Map.member` kvs)) requiredReqKeys
+    extraKeys   = filter (not . (`elem` reqKeys)) (Map.keys kvs)
+
+reqKeys :: [Text]
+reqKeys = requiredReqKeys ++ ["headers", "query", "json", "file"]
+
+requiredReqKeys :: [Text]
+requiredReqKeys = ["url", "method"]
 
 type Env = HashMap Text Yaml.Value
 

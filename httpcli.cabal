@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 89f7386b8b095edf2e80e7bb93e95627631da4931e5739ed4d9373356a78fa6b
+-- hash: 36cccfd7b8d4e381bda3eb2199d5bd055837c94a81b9dc767e4170dff8c93c01
 
 name:           httpcli
 version:        0.1.0.0
@@ -30,7 +30,11 @@ library
       Restcli
       Restcli.Api
       Restcli.Cli
+      Restcli.Internal.Decodings
+      Restcli.Internal.Encodings
+      Restcli.Internal.ParseHeaders
       Restcli.Requests
+      Restcli.Types
   other-modules:
       Paths_httpcli
   hs-source-dirs:
@@ -38,9 +42,13 @@ library
   build-depends:
       aeson ==1.4.7.1
     , base >=4.7 && <5
+    , bytestring ==0.10.10.0
+    , case-insensitive ==1.2.1.0
     , containers ==0.6.2.1
+    , exceptions ==0.10.4
     , filepath ==1.4.2.1
     , http-types ==0.12.3
+    , megaparsec ==8.0.0
     , modern-uri ==0.3.2.0
     , mustache ==2.3.1
     , optparse-applicative ==0.15.1.0
@@ -61,14 +69,19 @@ executable httpcli-exe
   build-depends:
       aeson ==1.4.7.1
     , base >=4.7 && <5
+    , bytestring ==0.10.10.0
+    , case-insensitive ==1.2.1.0
     , containers ==0.6.2.1
+    , exceptions ==0.10.4
     , filepath ==1.4.2.1
     , http-types ==0.12.3
     , httpcli
+    , megaparsec ==8.0.0
     , modern-uri ==0.3.2.0
     , mustache ==2.3.1
     , optparse-applicative ==0.15.1.0
     , parsec ==3.1.14.0
+    , pretty-simple
     , req ==3.2.0
     , text ==1.2.4.0
     , unordered-containers ==0.2.10.0
@@ -86,10 +99,14 @@ test-suite httpcli-test
   build-depends:
       aeson ==1.4.7.1
     , base >=4.7 && <5
+    , bytestring ==0.10.10.0
+    , case-insensitive ==1.2.1.0
     , containers ==0.6.2.1
+    , exceptions ==0.10.4
     , filepath ==1.4.2.1
     , http-types ==0.12.3
     , httpcli
+    , megaparsec ==8.0.0
     , modern-uri ==0.3.2.0
     , mustache ==2.3.1
     , optparse-applicative ==0.15.1.0

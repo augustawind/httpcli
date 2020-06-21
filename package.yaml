@@ -22,9 +22,13 @@ description: Please see the README on GitHub at <https://github.com/dustinrohde/
 dependencies:
   - aeson == 1.4.7.1
   - base >= 4.7 && < 5
+  - bytestring == 0.10.10.0
+  - case-insensitive == 1.2.1.0
   - containers == 0.6.2.1
+  - exceptions == 0.10.4
   - filepath == 1.4.2.1
   - http-types == 0.12.3
+  - megaparsec == 8.0.0
   - modern-uri == 0.3.2.0
   - mustache == 2.3.1
   - parsec == 3.1.14.0
@@ -47,6 +51,8 @@ executables:
       - -with-rtsopts=-N
     dependencies:
       - httpcli
+      # DEBUG ONLY
+      - pretty-simple
 
 tests:
   httpcli-test:

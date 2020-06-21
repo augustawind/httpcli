@@ -6,9 +6,9 @@ food:
     method: put
     headers: |
       {{#ct_headers}}
-        - {{key}}: application/json
+      {{key}}: application/json
       {{/ct_headers}}
-    body: |
+    json: |
       name: {{food_name}}
       rarity: {{food_rarity}}
       texture: mushy
