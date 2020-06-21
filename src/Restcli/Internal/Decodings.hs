@@ -51,10 +51,10 @@ parseRequest obj
     | not . null $ missingKeys
     = errorFail
         .  APIError "request"
-        $  "missing required keys "
+        $  "missing required key(s) "
         ++ unitems missingKeys
     | not . null $ unknownKeys
-    = errorFail . APIError "request" $ "extra keys " ++ unitems unknownKeys
+    = errorFail . APIError "request" $ "extra key(s) " ++ unitems unknownKeys
     | otherwise
     = let encoded = Yaml.encode obj
           decoded = Yaml.decodeEither' encoded :: YamlParser Request
@@ -69,13 +69,11 @@ instance FromJSON Request where
     parseJSON = genericParseJSON aesonRequestOptions
 
 instance FromJSON HTTP.StdMethod where
-    parseJSON v = parse v <?> Key "method"
-      where
-        parse = withText "method" $ \method ->
-            case readEither . map toUpper $ T.unpack method of
-                Left err -> errorFail
-                    $ errReqField method "method" "unrecognized method"
-                Right method -> return method
+    parseJSON = withText "method" $ \method ->
+        case readEither . map toUpper $ T.unpack method of
+            Left err ->
+                errorFail $ errReqField method "method" "unrecognized method"
+            Right method -> return method
 
 instance FromJSON URI where
     parseJSON = withText "uri" $ \uri ->
