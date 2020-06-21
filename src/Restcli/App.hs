@@ -41,15 +41,13 @@ runApp app = do
         Left err -> fail $ displayException err
         Right api ->
             -- <DEBUG>
-            let section name = putStrLn $ unlines ["", replicate 25 '-', name]
+            let section name = putStrLn $ unlines [replicate 25 '-', name]
             in  section "API"
-                    >> pprint api
+                    >> B.putStrLn (Yaml.encode api)
                     >> section "ENV"
-                    >> pprint env
-                    >> section "APP RESULT"
-                    >>
-
-                                    -- </DEBUG>
+                    >> B.putStrLn (Yaml.encode env)
+                    >> section "PROGRAM OUTPUT"
+                    >> -- </DEBUG>
                        runAppWith app opts api env
 
 runAppWith :: App a -> Options -> API -> Env -> IO a
