@@ -1,7 +1,6 @@
 module Restcli.App where
 
 import           Control.Exception
-import           Control.Monad.Identity
 import           Control.Monad.Reader
 import           Control.Monad.State
 import qualified Data.ByteString.Char8         as B
@@ -9,6 +8,7 @@ import qualified Data.HashMap.Strict           as Map
 import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
 import qualified Data.Yaml                     as Yaml
+import qualified Text.Pretty.Simple            as PP
 
 import           Restcli.Api
 import           Restcli.Cli
@@ -41,13 +41,16 @@ runApp app = do
         Left err -> fail $ displayException err
         Right api ->
             -- <DEBUG>
-            putStrLn ("\n" ++ replicate 25 '-' ++ "\nTEMPLATE\n")
-                >> print tmpl
-                >> putStrLn ("\n" ++ replicate 25 '-' ++ "\nENV\n")
-                >> print env
-                >>
-            -- </DEBUG>
-                   runAppWith app opts api env
+            let section name = putStrLn $ unlines ["", replicate 25 '-', name]
+            in  section "API"
+                    >> pprint api
+                    >> section "ENV"
+                    >> pprint env
+                    >> section "APP RESULT"
+                    >>
+
+                                    -- </DEBUG>
+                       runAppWith app opts api env
 
 runAppWith :: App a -> Options -> API -> Env -> IO a
 runAppWith app opts api env =
@@ -74,3 +77,7 @@ cmdViewS path = do
         Right (APIRequestAttr attr ) -> return . B.unpack $ Yaml.encode attr
         Left  err                    -> fail $ displayException err
 
+pprint :: Show a => a -> IO ()
+pprint = PP.pPrintOpt
+    PP.NoCheckColorTty
+    PP.defaultOutputOptionsNoColor { PP.outputOptionsIndentAmount = 2 }

@@ -33,6 +33,7 @@ dependencies:
   - mtl == 2.2.2
   - mustache == 2.3.1
   - parsec == 3.1.14.0
+  - pretty-simple == 3.2.3.0
   - optparse-applicative == 0.15.1.0
   - req == 3.2.0
   - split == 0.2.3.4
@@ -54,8 +55,6 @@ executables:
       - -with-rtsopts=-N
     dependencies:
       - httpcli
-      # DEBUG ONLY
-      - pretty-simple
 
 tests:
   httpcli-test:
