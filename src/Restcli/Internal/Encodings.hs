@@ -4,7 +4,6 @@ module Restcli.Internal.Encodings where
 
 import           Data.Aeson
 import           Data.Aeson.Types               ( Parser )
-import qualified Data.ByteString.Char8         as C
 import qualified Data.CaseInsensitive          as CI
 import           Data.Char                      ( toLower
                                                 , toTitle
@@ -30,7 +29,8 @@ instance ToJSON ReqNode where
     toJSON (ReqGroup group) = object . Map.toList . Map.map toJSON $ group
 
 instance ToJSON Request where
-    toJSON = genericToJSON aesonRequestOptions
+    toJSON     = genericToJSON aesonRequestOptions
+    toEncoding = genericToEncoding aesonRequestOptions
 
 instance ToJSON HTTP.StdMethod where
     toJSON = toJSON . show

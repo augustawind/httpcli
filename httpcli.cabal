@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 039fe557f90004c8dd5e329e23c5d33f450d9dee627d586efc981d690e10f87f
+-- hash: 30598069fe6b5fcfe75f9cc5d1d46395721a6ce9560b3122c0e51dcfe18e5fad
 
 name:           httpcli
 version:        0.1.0.0
