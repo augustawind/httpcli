@@ -19,14 +19,17 @@ import           System.FilePath                ( splitFileName )
 import           Text.Mustache
 import           Text.Parsec.Error              ( ParseError )
 
+import           Restcli.Error
 import           Restcli.Internal.Decodings
 import           Restcli.Types
 
-parseAPI :: Template -> Env -> Either String API
+parseAPI :: Template -> Env -> Either Error API
 parseAPI tmpl env =
     let rendered = encodeUtf8 $ substitute tmpl env
         parsed   = Yaml.decodeEither' rendered :: YamlParser API
-    in  either (Left . show) return parsed
+    in  case parsed of
+            Left  err -> Left $ YamlError err `WithMsg` "Error parsing API"
+            Right api -> return api
 
 instance HttpBody (Maybe RequestBody) where
     getRequestBody Nothing                = getRequestBody Req.NoReqBody
@@ -40,9 +43,14 @@ readApiTemplate :: FilePath -> IO Template
 readApiTemplate path = do
     let (apiDir, apiFileName) = splitFileName path
     compiled <- automaticCompile [apiDir] apiFileName
-    either (error . show) return compiled
+    case compiled of
+        Left err ->
+            errorFail $ TemplateError err `WithMsg` "failed to compile API"
+        Right tmpl -> return tmpl
 
 readEnv :: FilePath -> IO Env
 readEnv path = do
     decoded <- Yaml.decodeFileEither path
-    either (error . show) return decoded
+    case decoded of
+        Left  err -> errorFail $ YamlError err `WithMsg` "failed to parse Env"
+        Right env -> return env

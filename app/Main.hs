@@ -2,6 +2,7 @@
 
 module Main where
 
+import           Control.Exception              ( displayException )
 import qualified Data.ByteString.Char8         as C
 import qualified Data.HashMap.Strict           as Map
 import qualified Data.Yaml                     as Yaml
@@ -9,6 +10,7 @@ import           Text.Pretty.Simple
 
 import           Restcli.Api
 import           Restcli.Cli
+import           Restcli.Error
 import           Restcli.Internal.Encodings
 
 main :: IO ()
@@ -32,7 +34,8 @@ main = do
         let api = parseAPI tmpl env
         putStrLn $ "\n" ++ replicate 25 '-' ++ "\nAPI\n"
         case api of
-                Left  err -> putStr "ERROR :: " >> putStrLn err
+                Left err -> putStr "ERROR: " >> print err >> putStrLn
+                        ("\n" ++ displayException err)
                 Right val -> do
                         pPrintOpt
                                 CheckColorTty

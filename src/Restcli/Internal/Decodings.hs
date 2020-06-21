@@ -5,14 +5,19 @@ module Restcli.Internal.Decodings
 where
 
 import           Data.Aeson
-import           Data.Aeson.Types               ( Parser
+import           Data.Aeson.Types               ( JSONPathElement(..)
+                                                , Parser
                                                 , emptyArray
                                                 )
 import qualified Data.ByteString.Char8         as C
 import           Data.Char                      ( toUpper )
 import qualified Data.HashMap.Strict           as Map
-import           Data.List                      ( (\\) )
-import           Data.Maybe                     ( fromJust )
+import           Data.List                      ( (\\)
+                                                , intercalate
+                                                )
+import           Data.Maybe                     ( catMaybes
+                                                , fromJust
+                                                )
 import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
 import           Data.Text.Encoding             ( encodeUtf8 )
@@ -27,6 +32,7 @@ import           Text.Megaparsec                ( Parsec
                                                 , runParser
                                                 )
 
+import           Restcli.Error
 import           Restcli.Internal.Common
 import           Restcli.Internal.ParseHeaders  ( parseHeaders )
 import           Restcli.Types
@@ -37,14 +43,18 @@ instance FromJSON API where
 instance FromJSON ReqNode where
     parseJSON = withObject "node" $ \node -> if any (`Map.member` node) reqKeys
         then Req <$> parseRequest node
-        else ReqGroup <$> mapM parseJSON node
+        else ReqGroup <$> (sequence . Map.mapWithKey parseGroup $ node)
+        where parseGroup k v = parseJSON v <?> Key k
 
 parseRequest :: Object -> Parser Request
 parseRequest obj
     | not . null $ missingKeys
-    = fail $ "required keys missing from request: " ++ show missingKeys
+    = errorFail
+        .  APIError "request"
+        $  "missing required keys "
+        ++ unitems missingKeys
     | not . null $ unknownKeys
-    = fail $ "unknown keys found in request: " ++ show unknownKeys
+    = errorFail . APIError "request" $ "extra keys " ++ unitems unknownKeys
     | otherwise
     = let encoded = Yaml.encode obj
           decoded = Yaml.decodeEither' encoded :: YamlParser Request
@@ -52,20 +62,28 @@ parseRequest obj
   where
     missingKeys = requiredReqKeys \\ Map.keys obj
     unknownKeys = Map.keys obj \\ reqKeys
+    unitems     = T.unpack . T.intercalate ", " . map (surround "'")
+    surround x = (x `T.append`) . (`T.append` x)
 
 instance FromJSON Request where
     parseJSON = genericParseJSON aesonRequestOptions
 
 instance FromJSON HTTP.StdMethod where
-    parseJSON = withText "method" $ \method ->
-        case readEither . map toUpper $ T.unpack method of
-            Left  err    -> errReqField method "method" ""
-            Right method -> return method
+    parseJSON v = parse v <?> Key "method"
+      where
+        parse = withText "method" $ \method ->
+            case readEither . map toUpper $ T.unpack method of
+                Left err -> errorFail
+                    $ errReqField method "method" "unrecognized method"
+                Right method -> return method
 
 instance FromJSON URI where
     parseJSON = withText "uri" $ \uri ->
         case runParser (URI.parser :: Parsec Void Text URI) "" uri of
-            Left  err -> errReqField uri "url" (show err)
+            Left err ->
+                errorFail
+                    $           errReqField uri "url" "invalid url"
+                    `WithCause` ParsecError err
             Right val -> return val
 
 instance FromJSON RequestQuery where
@@ -82,21 +100,29 @@ instance FromJSON RequestHeaders where
     parseJSON = withText "headers" $ \headers ->
         -- TODO: write a new, much more lenient parser that auto-escapes bad chars,
         -- auto-quotes header values, and allows multiple newlines between headers.
-        case runParser parseHeaders "" $ encodeUtf8 headers of
-            Left  err -> errReqField headers "headers" (show err)
+        case runParser parseHeaders "" headers of
+            Left err ->
+                errorFail
+                    $           errReqField headers "headers" "invalid headers"
+                    `WithCause` ParsecError err
             Right val -> return . Headers $ val
 
 instance FromJSON RequestBody where
     -- TODO: allow for other body types
     parseJSON = withText "json" $ \body ->
         case Yaml.decodeEither' $ encodeUtf8 body :: YamlParser Value of
-            Left  err -> errReqField body "json" (show err)
+            Left err ->
+                errorFail
+                    $           errReqField body "json" "invalid JSON body"
+                    `WithCause` YamlError err
             Right val -> return . ReqBodyJson $ val
 
 
-errReqField :: Text -> String -> String -> Parser a
-errReqField actual field msg = fail $ before ++ base ++ after
+errReqField :: Text -> String -> String -> Error
+errReqField actual field msg =
+    APIError field . intercalate ": " . catMaybes $ [actual', msg']
   where
-    base   = "invalid value for request `" ++ field ++ "`"
-    before = if T.null actual then "" else "'" ++ T.unpack actual ++ "': "
-    after  = if null msg then "" else ": " ++ msg
+    actual' | T.null actual = Nothing
+            | otherwise     = Just $ "'" ++ T.unpack actual ++ "'"
+    msg' | null msg  = Nothing
+         | otherwise = Just msg

@@ -28,8 +28,7 @@ newtype RequestQuery = Query HTTP.QueryText deriving (Eq, Show)
 
 newtype RequestHeaders = Headers HTTP.RequestHeaders deriving (Eq, Show)
 
-newtype RequestBody
-    = ReqBodyJson Aeson.Value
+newtype RequestBody = ReqBodyJson Aeson.Value
     deriving (Eq, Show)
 
 type YamlParser = Either Yaml.ParseException
