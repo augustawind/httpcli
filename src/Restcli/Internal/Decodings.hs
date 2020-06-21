@@ -34,38 +34,25 @@ instance FromJSON Request where
     parseJSON = withObject "request" $ \v -> do
         reqMethod  <- v .: "method" >>= parseJSON
         reqUrl     <- v .: "url" >>= parseJSON
-
-        -- TODO: allow for no-value keys
         reqQuery   <- v .:? "query" .!= Null >>= parseJSON
-
-        reqHeaders <- do
-            src <- v .:? "headers" .!= "" :: Parser String
-            -- TODO: write a new, much more lenient parser that auto-escapes bad chars,
-            -- auto-quotes header values, and allows multiple newlines between headers.
-            case runParser parseHeaders "" $ C.pack src of
-                Left  err -> errReqField src "headers" (show err)
-                Right []  -> return Nothing
-                Right val -> return . Just . Headers $ val
-
-        -- TODO: allow for other body types
-        reqBody <- v .:? "json" .!= Null >>= parseJSON
-
+        reqHeaders <- v .:? "headers" .!= Null >>= parseJSON
+        reqBody    <- v .:? "json" .!= Null >>= parseJSON
         return Request { .. }
 
 instance FromJSON HTTP.StdMethod where
     parseJSON = withText "method" $ \method ->
         case readEither . map toUpper $ T.unpack method of
-            Left  err    -> errReqField (T.unpack method) "method" ""
+            Left  err    -> errReqField method "method" ""
             Right method -> return method
 
 instance FromJSON URI where
     parseJSON = withText "uri" $ \uri ->
         case runParser (URI.parser :: Parsec Void Text URI) "" uri of
-            Left  err -> errReqField (T.unpack uri) "url" (show err)
+            Left  err -> errReqField uri "url" (show err)
             Right val -> return val
 
--- TODO: allow for no-value keys
 instance FromJSON RequestQuery where
+    -- TODO: allow for no-value keys
     parseJSON =
         withArray "query"
             $ fmap (Query . concatMap Map.toList . V.toList)
@@ -74,16 +61,25 @@ instance FromJSON RequestQuery where
         parseQueryItems = withObject "query item" $ mapM parseQueryVal
         parseQueryVal   = withText "query item value" (return . Just)
 
+instance FromJSON RequestHeaders where
+    parseJSON = withText "headers" $ \headers ->
+        -- TODO: write a new, much more lenient parser that auto-escapes bad chars,
+        -- auto-quotes header values, and allows multiple newlines between headers.
+        case runParser parseHeaders "" $ encodeUtf8 headers of
+            Left  err -> errReqField headers "headers" (show err)
+            Right val -> return . Headers $ val
+
 instance FromJSON RequestBody where
+    -- TODO: allow for other body types
     parseJSON = withText "json" $ \body ->
         case Yaml.decodeEither' $ encodeUtf8 body :: YamlParser Value of
-            Left  err -> errReqField (T.unpack body) "json" (show err)
+            Left  err -> errReqField body "json" (show err)
             Right val -> return . ReqBodyJson $ val
 
 
-errReqField :: String -> String -> String -> Parser a
+errReqField :: Text -> String -> String -> Parser a
 errReqField actual field msg = fail $ before ++ base ++ after
   where
     base   = "invalid value for request `" ++ field ++ "`"
-    before = if null actual then "" else "'" ++ actual ++ "': "
+    before = if T.null actual then "" else "'" ++ T.unpack actual ++ "': "
     after  = if null msg then "" else ": " ++ msg
