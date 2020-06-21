@@ -11,7 +11,7 @@ import qualified Network.HTTP.Types            as HTTP
 import           Text.URI                       ( URI(..) )
 
 newtype API = API (HashMap Text ReqNode)
-    deriving (Eq, Show)
+    deriving (Generic, Eq, Show)
 
 data ReqNode = Req Request | ReqGroup (HashMap Text ReqNode)
     deriving (Eq, Show)
@@ -22,7 +22,7 @@ data Request = Request
     , reqQuery :: Maybe RequestQuery
     , reqHeaders :: Maybe RequestHeaders
     , reqBody :: Maybe RequestBody
-    } deriving (Eq, Show, Generic)
+    } deriving (Generic, Eq, Show)
 
 newtype RequestQuery = Query HTTP.QueryText deriving (Eq, Show)
 
@@ -33,3 +33,5 @@ newtype RequestBody
     deriving (Eq, Show)
 
 type YamlParser = Either Yaml.ParseException
+
+type Env = HashMap Text Yaml.Value

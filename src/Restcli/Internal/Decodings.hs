@@ -13,6 +13,8 @@ import qualified Data.ByteString.Char8         as C
 import           Data.Char                      ( toUpper )
 import           Data.HashMap.Strict            ( HashMap )
 import qualified Data.HashMap.Strict           as Map
+import           Data.List                      ( (\\) )
+import           Data.Maybe                     ( fromJust )
 import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
 import           Data.Text.Encoding             ( encodeUtf8 )
@@ -27,17 +29,39 @@ import           Text.Megaparsec                ( Parsec
                                                 , runParser
                                                 )
 
+import           Restcli.Internal.Common
 import           Restcli.Internal.ParseHeaders  ( parseHeaders )
 import           Restcli.Types
 
+instance FromJSON API
+
+instance FromJSON ReqNode where
+    parseJSON = withObject "node" $ \node -> if any (`Map.member` node) reqKeys
+        then Req <$> parseRequest node
+        else ReqGroup <$> mapM parseJSON node
+
+parseRequest :: Object -> Parser Request
+parseRequest obj
+    | not . null $ missingKeys
+    = fail $ "required keys missing from request: " ++ show missingKeys
+    | not . null $ unknownKeys
+    = fail $ "unknown keys found in request: " ++ show unknownKeys
+    | otherwise
+    = let encoded = Yaml.encode obj
+          decoded = Yaml.decodeEither' encoded :: YamlParser Request
+      in  either (fail . show) return decoded
+  where
+    missingKeys = requiredReqKeys \\ Map.keys obj
+    unknownKeys = Map.keys obj \\ reqKeys
+
+reqKeys :: [Text]
+reqKeys = requiredReqKeys ++ ["headers", "query", "json", "file"]
+
+requiredReqKeys :: [Text]
+requiredReqKeys = ["url", "method"]
+
 instance FromJSON Request where
-    parseJSON = withObject "request" $ \v -> do
-        reqMethod  <- v .: "method" >>= parseJSON
-        reqUrl     <- v .: "url" >>= parseJSON
-        reqQuery   <- v .:? "query" .!= Null >>= parseJSON
-        reqHeaders <- v .:? "headers" .!= Null >>= parseJSON
-        reqBody    <- v .:? "json" .!= Null >>= parseJSON
-        return Request { .. }
+    parseJSON = genericParseJSON aesonRequestOptions
 
 instance FromJSON HTTP.StdMethod where
     parseJSON = withText "method" $ \method ->

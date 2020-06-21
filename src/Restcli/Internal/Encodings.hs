@@ -19,6 +19,7 @@ import qualified Network.HTTP.Types            as HTTP
 import           Text.URI                       ( URI )
 import qualified Text.URI                      as URI
 
+import           Restcli.Internal.Common
 import           Restcli.Types
 
 instance ToJSON API where
@@ -29,18 +30,7 @@ instance ToJSON ReqNode where
     toJSON (ReqGroup group) = object . Map.toList . Map.map toJSON $ group
 
 instance ToJSON Request where
-    toJSON = genericToJSON defaultOptions
-        { omitNothingFields  = True
-        , fieldLabelModifier = fromJust . (`lookup` fieldNames)
-        }
-      where
-        fieldNames =
-            [ ("reqMethod" , "method")
-            , ("reqUrl"    , "url")
-            , ("reqQuery"  , "query")
-            , ("reqHeaders", "headers")
-            , ("reqBody"   , "json")
-            ]
+    toJSON = genericToJSON aesonRequestOptions
 
 instance ToJSON HTTP.StdMethod where
     toJSON = toJSON . show
