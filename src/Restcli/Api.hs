@@ -58,7 +58,7 @@ getApiComponent' keys (API api) = fst <$> foldM f (APIGroup api, []) keys
                 Nothing               -> error' ks' GroupKind
     f (APIRequest req, ks) k =
         let ks' = ks ++ [k]
-        in  case readMaybe (T.unpack k) :: Maybe RequestComponent of
+        in  case readMaybe (T.unpack k) :: Maybe RequestAttrKind of
                 Just attr ->
                     Right (APIRequestAttr $ getRequestAttr attr req, ks')
                 -- TODO: find a way to represent a not-found RequestAttr
@@ -90,7 +90,7 @@ getApiRequest groupKeys reqKey api = case getApiGroup groupKeys api of
     keys   = groupKeys ++ [reqKey]
 
 getApiRequestAttr
-    :: [Text] -> Text -> RequestComponent -> API -> Either Error RequestAttr
+    :: [Text] -> Text -> RequestAttrKind -> API -> Either Error RequestAttr
 getApiRequestAttr groupKeys reqKey attr api =
     case getApiRequest groupKeys reqKey api of
         Right req -> Right . getRequestAttr attr $ req

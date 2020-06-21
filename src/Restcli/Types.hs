@@ -12,6 +12,11 @@ import qualified Network.HTTP.Types            as HTTP
 import           Text.Read
 import           Text.URI                       ( URI(..) )
 
+type YamlParser = Either Yaml.ParseException
+
+------------------------------------------------------------------------
+-- API documents.
+
 newtype API = API ReqGroup
     deriving (Generic, Eq, Show)
 
@@ -35,13 +40,13 @@ newtype RequestHeaders = Headers HTTP.RequestHeaders deriving (Eq, Show)
 newtype RequestBody = ReqBodyJson Aeson.Value
     deriving (Eq, Show)
 
-data RequestAttr
-    = ReqMethod HTTP.StdMethod
-    | ReqUrl URI
-    | ReqQuery (Maybe RequestQuery)
-    | ReqHeaders (Maybe RequestHeaders)
-    | ReqBody (Maybe RequestBody)
-    deriving (Generic, Eq, Show)
+------------------------------------------------------------------------
+-- Env documents.
+
+type Env = HashMap Text Yaml.Value
+
+------------------------------------------------------------------------
+-- Abstractions for dynamically working with API's.
 
 data APIComponent
     = APIGroup ReqGroup
@@ -52,7 +57,7 @@ data APIComponent
 data APIComponentKind
     = GroupKind
     | RequestKind
-    | RequestAttrKind RequestComponent
+    | RequestAttrKind RequestAttrKind
     deriving (Eq)
 
 instance Show APIComponentKind where
@@ -60,7 +65,15 @@ instance Show APIComponentKind where
     show RequestKind             = "Request"
     show (RequestAttrKind attrT) = "Request '" ++ show attrT ++ "'"
 
-data RequestComponent
+data RequestAttr
+    = ReqMethod HTTP.StdMethod
+    | ReqUrl URI
+    | ReqQuery (Maybe RequestQuery)
+    | ReqHeaders (Maybe RequestHeaders)
+    | ReqBody (Maybe RequestBody)
+    deriving (Generic, Eq, Show)
+
+data RequestAttrKind
     = ReqMethodT
     | ReqUrlT
     | ReqQueryT
@@ -68,14 +81,14 @@ data RequestComponent
     | ReqBodyT
     deriving (Eq)
 
-instance Show RequestComponent where
+instance Show RequestAttrKind where
     show ReqMethodT  = "method"
     show ReqUrlT     = "url"
     show ReqQueryT   = "query"
     show ReqHeadersT = "headers"
     show ReqBodyT    = "json"
 
-instance Read RequestComponent where
+instance Read RequestAttrKind where
     readsPrec _ input =
         let (word, rest) = span isAlpha input
             parsed       = case word of
@@ -87,13 +100,9 @@ instance Read RequestComponent where
                 _         -> Nothing
         in  maybe [] (\p -> [(p, rest)]) parsed
 
-getRequestAttr :: RequestComponent -> Request -> RequestAttr
+getRequestAttr :: RequestAttrKind -> Request -> RequestAttr
 getRequestAttr ReqMethodT  = ReqMethod . reqMethod
 getRequestAttr ReqUrlT     = ReqUrl . reqUrl
 getRequestAttr ReqQueryT   = ReqQuery . reqQuery
 getRequestAttr ReqHeadersT = ReqHeaders . reqHeaders
 getRequestAttr ReqBodyT    = ReqBody . reqBody
-
-type Env = HashMap Text Yaml.Value
-
-type YamlParser = Either Yaml.ParseException
