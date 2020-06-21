@@ -3,6 +3,7 @@ module Restcli.Types where
 import qualified Data.Aeson                    as Aeson
 import           Data.HashMap.Strict            ( HashMap )
 import           Data.Text                      ( Text )
+import qualified Data.Yaml as Yaml
 import qualified Network.HTTP.Types            as HTTP
 import           Text.URI                       ( URI(..) )
 
@@ -25,3 +26,5 @@ data RequestBody
     | ReqBodyJson Aeson.Value
     | ReqBodyFile FilePath
     deriving (Eq, Show)
+
+type YamlParser = Either Yaml.ParseException

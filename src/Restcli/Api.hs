@@ -44,9 +44,7 @@ parseAPI :: Template -> Env -> Either String API
 parseAPI tmpl env =
     let rendered = encodeUtf8 $ substitute tmpl env
         decoded =
-                Yaml.decodeEither' rendered :: Either
-                        Yaml.ParseException
-                        (HashMap Text Yaml.Value)
+                Yaml.decodeEither' rendered :: YamlParser (HashMap Text Yaml.Value)
     in  case decoded of
             Left  err -> Left $ show err
             Right val -> API <$> mapM parseNode val
@@ -69,11 +67,8 @@ parseRequest kvs
     | otherwise
     -- = Right . fromJust . decode . encode $ kvs
     = let encoded = Yaml.encode kvs
-          decoded =
-                  Yaml.decodeEither' encoded :: Either Yaml.ParseException Request
-      in  case decoded of
-              Left  err -> Left $ show err
-              Right req -> Right req
+          decoded = Yaml.decodeEither' encoded :: YamlParser Request
+      in  either (Left . show) return decoded
   where
     missingKeys = filter (not . (`Map.member` kvs)) requiredReqKeys
     extraKeys   = filter (not . (`elem` reqKeys)) (Map.keys kvs)

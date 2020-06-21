@@ -1,7 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Restcli.Internal.Decodings where
+module Restcli.Internal.Decodings
+    ()
+where
 
 import           Control.Monad.Catch
 import           Data.Aeson
@@ -24,13 +26,6 @@ import           Text.Megaparsec                ( Parsec
 
 import           Restcli.Internal.ParseHeaders  ( parseHeaders )
 import           Restcli.Types
-
-errReqField :: String -> String -> String -> Parser a
-errReqField actual field msg = fail $ before ++ base ++ after
-  where
-    base   = "invalid value for request `" ++ field ++ "`"
-    before = if null actual then "" else "'" ++ actual ++ "': "
-    after  = if null msg then "" else ": " ++ msg
 
 instance FromJSON Request where
     parseJSON (Object v) = do
@@ -63,6 +58,17 @@ instance FromJSON Request where
             return $ Map.toList src
 
         -- TODO: allow for other body types
-        reqBody <- ReqBodyJson <$> (v .:? "json" .!= "" :: Parser Value)
+        reqBody <- do
+            src <- v .:? "json" .!= "" :: Parser String
+            case Yaml.decodeEither' (C.pack src) :: YamlParser Value of
+                Left  err -> errReqField src "json" (show err)
+                Right val -> return . ReqBodyJson $ val
 
         return Request { .. }
+
+errReqField :: String -> String -> String -> Parser a
+errReqField actual field msg = fail $ before ++ base ++ after
+  where
+    base   = "invalid value for request `" ++ field ++ "`"
+    before = if null actual then "" else "'" ++ actual ++ "': "
+    after  = if null msg then "" else ": " ++ msg
