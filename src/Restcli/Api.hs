@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -21,12 +22,12 @@ import           Text.Parsec.Error              ( ParseError )
 import           Restcli.Internal.Decodings
 import           Restcli.Types
 
-instance HttpBody RequestBody where
-    getRequestBody NoReqBody       = getRequestBody Req.NoReqBody
-    getRequestBody (ReqBodyJson v) = getRequestBody $ Req.ReqBodyJson v
+instance HttpBody (Maybe RequestBody) where
+    getRequestBody Nothing                = getRequestBody Req.NoReqBody
+    getRequestBody (Just (ReqBodyJson v)) = getRequestBody $ Req.ReqBodyJson v
 
-    getRequestContentType NoReqBody = getRequestContentType Req.NoReqBody
-    getRequestContentType (ReqBodyJson v) =
+    getRequestContentType Nothing = getRequestContentType Req.NoReqBody
+    getRequestContentType (Just (ReqBodyJson v)) =
         getRequestContentType $ Req.ReqBodyJson v
 
 readApiTemplate :: FilePath -> IO Template

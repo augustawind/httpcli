@@ -1,9 +1,12 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module Restcli.Types where
 
 import qualified Data.Aeson                    as Aeson
 import           Data.HashMap.Strict            ( HashMap )
 import           Data.Text                      ( Text )
 import qualified Data.Yaml                     as Yaml
+import           GHC.Generics                   ( Generic )
 import qualified Network.HTTP.Types            as HTTP
 import           Text.URI                       ( URI(..) )
 
@@ -16,16 +19,17 @@ data ReqNode = Req Request | ReqGroup (HashMap Text ReqNode)
 data Request = Request
     { reqMethod :: HTTP.StdMethod
     , reqUrl :: URI
-    , reqQuery :: HTTP.QueryText
-    , reqHeaders :: HTTP.RequestHeaders
-    , reqBody :: RequestBody
-    } deriving (Eq, Show)
+    , reqQuery :: Maybe RequestQuery
+    , reqHeaders :: Maybe RequestHeaders
+    , reqBody :: Maybe RequestBody
+    } deriving (Eq, Show, Generic)
 
+newtype RequestQuery = Query HTTP.QueryText deriving (Eq, Show)
 
+newtype RequestHeaders = Headers HTTP.RequestHeaders deriving (Eq, Show)
 
-data RequestBody
-    = NoReqBody
-    | ReqBodyJson Aeson.Value
+newtype RequestBody
+    = ReqBodyJson Aeson.Value
     deriving (Eq, Show)
 
 type YamlParser = Either Yaml.ParseException
