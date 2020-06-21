@@ -50,11 +50,14 @@ parseRequest :: Object -> Parser Request
 parseRequest obj
     | not . null $ missingKeys
     = errorFail
-        .  APIError "request"
+        .  APIParseError "request"
         $  "missing required key(s) "
         ++ unitems missingKeys
     | not . null $ unknownKeys
-    = errorFail . APIError "request" $ "extra key(s) " ++ unitems unknownKeys
+    = errorFail
+        .  APIParseError "request"
+        $  "extra key(s) "
+        ++ unitems unknownKeys
     | otherwise
     = let encoded = Yaml.encode obj
           decoded = Yaml.decodeEither' encoded :: YamlParser Request
@@ -118,7 +121,7 @@ instance FromJSON RequestBody where
 
 errReqField :: Text -> String -> String -> Error
 errReqField actual field msg =
-    APIError field . intercalate ": " . catMaybes $ [actual', msg']
+    APIParseError field . intercalate ": " . catMaybes $ [actual', msg']
   where
     actual' | T.null actual = Nothing
             | otherwise     = Just $ "'" ++ T.unpack actual ++ "'"

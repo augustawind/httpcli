@@ -1,6 +1,7 @@
 module Restcli.Cli where
 
 import           Control.Applicative            ( optional )
+import           Data.List.Split                ( splitOn )
 import           Data.Semigroup                 ( (<>) )
 import           Options.Applicative
 
@@ -11,8 +12,8 @@ data Options = Options
     } deriving (Eq, Show)
 
 data Command
-    = Run { optRunPath :: String }
-    | View { optViewPath :: String }
+    = Run { optRunPath :: [String] }
+    | View { optViewPath :: [String] }
     deriving (Eq, Show)
 
 runCli :: IO Options
@@ -37,4 +38,4 @@ cliOptions =
         <*> optional (option str (long "env"))  -- envFile
   where
     mkCommand (name, desc, parser) = command name (info parser (progDesc desc))
-    argDataPath = argument str (metavar "PATH")
+    argDataPath = splitOn "." <$> argument str (metavar "PATH")

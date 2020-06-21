@@ -10,11 +10,13 @@ import           GHC.Generics                   ( Generic )
 import qualified Network.HTTP.Types            as HTTP
 import           Text.URI                       ( URI(..) )
 
-newtype API = API (HashMap Text ReqNode)
+newtype API = API ReqGroup
     deriving (Generic, Eq, Show)
 
-data ReqNode = Req Request | ReqGroup (HashMap Text ReqNode)
+data ReqNode = Req Request | ReqGroup ReqGroup
     deriving (Eq, Show)
+
+type ReqGroup = HashMap Text ReqNode
 
 data Request = Request
     { reqMethod :: HTTP.StdMethod
@@ -31,6 +33,40 @@ newtype RequestHeaders = Headers HTTP.RequestHeaders deriving (Eq, Show)
 newtype RequestBody = ReqBodyJson Aeson.Value
     deriving (Eq, Show)
 
-type YamlParser = Either Yaml.ParseException
+data RequestAttr
+    = ReqMethod HTTP.StdMethod
+    | ReqUrl URI
+    | ReqQuery (Maybe RequestQuery)
+    | ReqHeaders (Maybe RequestHeaders)
+    | ReqBody (Maybe RequestBody)
+    deriving (Eq, Show)
+
+data APIComponent
+    = GroupT
+    | RequestT
+    | RequestAttrT RequestComponent
+    deriving (Eq)
+
+data RequestComponent
+    = ReqMethodT
+    | ReqUrlT
+    | ReqQueryT
+    | ReqHeadersT
+    | ReqBodyT
+    deriving (Eq)
+
+instance Show APIComponent where
+    show GroupT               = "Group"
+    show RequestT             = "Request"
+    show (RequestAttrT attrT) = "Request '" ++ show attrT ++ "'"
+
+instance Show RequestComponent where
+    show ReqMethodT  = "method"
+    show ReqUrlT     = "url"
+    show ReqQueryT   = "query"
+    show ReqHeadersT = "headers"
+    show ReqBodyT    = "json"
 
 type Env = HashMap Text Yaml.Value
+
+type YamlParser = Either Yaml.ParseException

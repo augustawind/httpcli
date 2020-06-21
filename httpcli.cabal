@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 9cd8cd2555d56c6b12918ab5331d7eb5cc1c74d5eb0ed8db9a52173ed289206d
+-- hash: f5de389572f920986ea05b59604e1ae5775fa63104d8c0547c3239b0685f4132
 
 name:           httpcli
 version:        0.1.0.0
@@ -29,6 +29,7 @@ library
   exposed-modules:
       Restcli
       Restcli.Api
+      Restcli.App
       Restcli.Cli
       Restcli.Data.Common
       Restcli.Data.Decoding
@@ -52,10 +53,12 @@ library
     , http-types ==0.12.3
     , megaparsec ==8.0.0
     , modern-uri ==0.3.2.0
+    , mtl ==2.2.2
     , mustache ==2.3.1
     , optparse-applicative ==0.15.1.0
     , parsec ==3.1.14.0
     , req ==3.2.0
+    , split ==0.2.3.4
     , text ==1.2.4.0
     , unordered-containers ==0.2.10.0
     , vector ==0.12.1.2
@@ -81,11 +84,13 @@ executable httpcli-exe
     , httpcli
     , megaparsec ==8.0.0
     , modern-uri ==0.3.2.0
+    , mtl ==2.2.2
     , mustache ==2.3.1
     , optparse-applicative ==0.15.1.0
     , parsec ==3.1.14.0
     , pretty-simple
     , req ==3.2.0
+    , split ==0.2.3.4
     , text ==1.2.4.0
     , unordered-containers ==0.2.10.0
     , vector ==0.12.1.2
@@ -112,10 +117,12 @@ test-suite httpcli-test
     , httpcli
     , megaparsec ==8.0.0
     , modern-uri ==0.3.2.0
+    , mtl ==2.2.2
     , mustache ==2.3.1
     , optparse-applicative ==0.15.1.0
     , parsec ==3.1.14.0
     , req ==3.2.0
+    , split ==0.2.3.4
     , text ==1.2.4.0
     , unordered-containers ==0.2.10.0
     , vector ==0.12.1.2

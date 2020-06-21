@@ -30,10 +30,12 @@ dependencies:
   - http-types == 0.12.3
   - megaparsec == 8.0.0
   - modern-uri == 0.3.2.0
+  - mtl == 2.2.2
   - mustache == 2.3.1
   - parsec == 3.1.14.0
   - optparse-applicative == 0.15.1.0
   - req == 3.2.0
+  - split == 0.2.3.4
   - text == 1.2.4.0
   - unordered-containers == 0.2.10.0
   - vector == 0.12.1.2
