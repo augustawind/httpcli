@@ -1,7 +1,10 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Restcli.Internal.Common where
 
 import           Data.Aeson.Types
 import           Data.Maybe                     ( fromJust )
+import           Data.Text                      ( Text )
 
 aesonRequestOptions :: Options
 aesonRequestOptions = defaultOptions
@@ -16,3 +19,9 @@ aesonRequestOptions = defaultOptions
         , ("reqHeaders", "headers")
         , ("reqBody"   , "json")
         ]
+
+reqKeys :: [Text]
+reqKeys = requiredReqKeys ++ ["query", "headers", "json"]
+
+requiredReqKeys :: [Text]
+requiredReqKeys = ["method", "url"]

@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 
 module Restcli.Internal.Decodings
     ()
@@ -11,7 +10,6 @@ import           Data.Aeson.Types               ( Parser
                                                 )
 import qualified Data.ByteString.Char8         as C
 import           Data.Char                      ( toUpper )
-import           Data.HashMap.Strict            ( HashMap )
 import qualified Data.HashMap.Strict           as Map
 import           Data.List                      ( (\\) )
 import           Data.Maybe                     ( fromJust )
@@ -53,12 +51,6 @@ parseRequest obj
   where
     missingKeys = requiredReqKeys \\ Map.keys obj
     unknownKeys = Map.keys obj \\ reqKeys
-
-reqKeys :: [Text]
-reqKeys = requiredReqKeys ++ ["headers", "query", "json", "file"]
-
-requiredReqKeys :: [Text]
-requiredReqKeys = ["url", "method"]
 
 instance FromJSON Request where
     parseJSON = genericParseJSON aesonRequestOptions
