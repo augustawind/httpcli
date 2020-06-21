@@ -51,25 +51,18 @@ instance ToJSON URI where
 instance ToJSON RequestQuery where
     toJSON (Query query) = toJSONList . map (uncurry Map.singleton) $ query
 
-encodeQuery :: HTTP.QueryText -> Maybe Value
-encodeQuery []    = Nothing
-encodeQuery query = Just . toJSONList . map (uncurry Map.singleton) $ query
-
 instance ToJSON RequestHeaders where
     toJSON (Headers headers) = String . T.unlines . map encodeHeader $ headers
-
-encodeHeaders :: HTTP.RequestHeaders -> Maybe Value
-encodeHeaders = Just . String . T.unlines . map encodeHeader
-
-encodeHeader :: HTTP.Header -> Text
-encodeHeader (name, value) = T.concat [name', ": ", decodeUtf8 value]
-  where
-    nameParts = T.split (== '-') . decodeUtf8 $ CI.original name
-    name'     = T.intercalate "-" $ map toTitleCase nameParts
-    toTitleCase word = case T.uncons word of
-        Just (first, rest) -> toTitle first `T.cons` T.map toLower rest
-        Nothing            -> word
+      where
+        encodeHeader (name, value) =
+            let nameParts = T.split (== '-') . decodeUtf8 $ CI.original name
+                name'     = T.intercalate "-" $ map toTitleCase nameParts
+            in  T.concat [name', ": ", decodeUtf8 value]
 
 instance ToJSON RequestBody where
     toJSON (ReqBodyJson body) = String . decodeUtf8 . Yaml.encode $ body
 
+toTitleCase :: Text -> Text
+toTitleCase word = case T.uncons word of
+    Just (first, rest) -> toTitle first `T.cons` T.map toLower rest
+    Nothing            -> word
