@@ -1,0 +1,28 @@
+# TODO
+
+- use InsOrdHashMap to preserve ordering of api/env
+- support other body types (currently only JSON is supported)
+- add paths to APIError (e.g. `group1.group2.requestFoo.headers`)
+
+## Parts
+
+- Collections
+    - API docs & Env docs
+        - [x] YAML (de)serialization
+        - [x] Template rendering
+    - HTTP requests
+    - Command-line interface
+        - Commands:
+            run: execute request from API doc
+            view: print API group/request or Env
+            env: view or update Env
+        - Options:
+            --api: API yaml file
+            --env: Env yaml file
+            --save: persist variables to env
+        - Modifiers: DSL for just-in-time modification of API requests
+            - Actions:
+                assign: Set a request field value
+                update: Update an existing request field value
+                delete: Delete a request field value
+            - Targets: method, url, query, headers, json body
