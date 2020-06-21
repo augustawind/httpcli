@@ -2,7 +2,6 @@
 
 - use InsOrdHashMap to preserve ordering of api/env
 - support other body types (currently only JSON is supported)
-- add paths to APIError (e.g. `group1.group2.requestFoo.headers`)
 
 ## Parts
 
@@ -10,7 +9,10 @@
     - API docs & Env docs
         - [x] YAML (de)serialization
         - [x] Template rendering
-    - HTTP requests
+        - [ ] post-request scripting (embedded language?)
+    - Requests
+        - [ ] Massage Request into data suitable for Req library
+        - [ ] Execute post-request scripts on local Env.
     - Command-line interface
         - Commands:
             run: execute request from API doc

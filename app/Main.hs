@@ -38,7 +38,7 @@ main = do
         case api of
                 Left err -> putStr "ERROR: " >> print err >> putStrLn
                         ("\n" ++ displayException err)
-                Right val -> runApp dispatchS opts val env >>= pprint
+                Right val -> runApp dispatchS opts val env >>= putStrLn
 
         return ()
 
