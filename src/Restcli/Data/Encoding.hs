@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Restcli.Internal.Encodings where
+module Restcli.Data.Encoding where
 
 import           Data.Aeson
 import           Data.Aeson.Types               ( Parser )
@@ -18,7 +18,7 @@ import qualified Network.HTTP.Types            as HTTP
 import           Text.URI                       ( URI )
 import qualified Text.URI                      as URI
 
-import           Restcli.Internal.Common
+import           Restcli.Data.Common
 import           Restcli.Types
 
 instance ToJSON API where

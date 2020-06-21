@@ -20,7 +20,7 @@ import           Text.Mustache
 import           Text.Parsec.Error              ( ParseError )
 
 import           Restcli.Error
-import           Restcli.Internal.Decodings
+import           Restcli.Data.Decoding
 import           Restcli.Types
 
 parseAPI :: Template -> Env -> Either Error API

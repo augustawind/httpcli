@@ -11,7 +11,7 @@ import           Text.Pretty.Simple
 import           Restcli.Api
 import           Restcli.Cli
 import           Restcli.Error
-import           Restcli.Internal.Encodings
+import           Restcli.Data.Encoding
 
 main :: IO ()
 main = do

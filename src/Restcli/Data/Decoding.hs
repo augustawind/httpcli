@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Restcli.Internal.Decodings
+module Restcli.Data.Decoding
     ()
 where
 
@@ -33,8 +33,8 @@ import           Text.Megaparsec                ( Parsec
                                                 )
 
 import           Restcli.Error
-import           Restcli.Internal.Common
-import           Restcli.Internal.ParseHeaders  ( parseHeaders )
+import           Restcli.Data.Common
+import           Restcli.Data.Decoding.Headers  ( parseHeaders )
 import           Restcli.Types
 
 instance FromJSON API where
