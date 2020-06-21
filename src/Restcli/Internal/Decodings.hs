@@ -31,7 +31,8 @@ import           Restcli.Internal.Common
 import           Restcli.Internal.ParseHeaders  ( parseHeaders )
 import           Restcli.Types
 
-instance FromJSON API
+instance FromJSON API where
+    parseJSON = genericParseJSON aesonRequestOptions
 
 instance FromJSON ReqNode where
     parseJSON = withObject "node" $ \node -> if any (`Map.member` node) reqKeys
