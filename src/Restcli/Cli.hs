@@ -5,7 +5,15 @@ import           Data.Semigroup                 ( (<>) )
 import           Options.Applicative
 
 data Options = Options
-    { apiFile :: FilePath, envFile :: Maybe FilePath } deriving (Show)
+    { optCommand :: Command
+    , optApiFile :: FilePath
+    , optEnvFile :: Maybe FilePath
+    } deriving (Eq, Show)
+
+data Command
+    = Run { optRunPath :: String }
+    | View { optViewPath :: String }
+    deriving (Eq, Show)
 
 runCli :: IO Options
 runCli = execParser cli
@@ -18,5 +26,15 @@ cli = info
 cliOptions :: Parser Options
 cliOptions =
     Options
-        <$> strOption (long "api")  -- apiFile
-        <*> optional (strOption (long "env"))  -- envFile
+        <$> (subparser . foldMap mkCommand)
+                [ ("run", "run a request", Run <$> argDataPath)
+                , ( "view"
+                  , "inspect a group, request, or request attribute"
+                  , View <$> argDataPath
+                  )
+                ]
+        <*> option str (long "api")  -- apiFile
+        <*> optional (option str (long "env"))  -- envFile
+  where
+    mkCommand (name, desc, parser) = command name (info parser (progDesc desc))
+    argDataPath = argument str (metavar "PATH")
