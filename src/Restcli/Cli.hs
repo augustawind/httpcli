@@ -16,8 +16,8 @@ data Command
     | View { optViewPath :: [String] }
     deriving (Eq, Show)
 
-runCli :: IO Options
-runCli = execParser cli
+parseCli :: IO Options
+parseCli = execParser cli
 
 cli :: ParserInfo Options
 cli = info

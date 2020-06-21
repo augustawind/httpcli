@@ -5,6 +5,7 @@ import           Control.Monad.Identity
 import           Control.Monad.Reader
 import           Control.Monad.State
 import qualified Data.ByteString.Char8         as B
+import qualified Data.HashMap.Strict           as Map
 import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
 import qualified Data.Yaml                     as Yaml
@@ -22,20 +23,34 @@ data AppState = AppState
     , appEnv :: Env
     } deriving (Eq, Show)
 
--- appOptions :: App Options
--- appOptions = asks fst
-
--- appInitialState :: App AppState
--- appInitialState = asks snd
-
--- appState :: App AppState
--- appState = get
-
-run :: Options -> API -> Env -> IO ()
+run :: IO ()
 run = runApp dispatch
 
-runApp :: App a -> Options -> API -> Env -> IO a
-runApp app opts api env =
+runWith :: Options -> API -> Env -> IO ()
+runWith = runAppWith dispatch
+
+runApp :: App a -> IO a
+runApp app = do
+    opts <- parseCli
+    tmpl <- readApiTemplate $ optApiFile opts
+    env  <- case optEnvFile opts of
+        Just filePath -> readEnv filePath
+        Nothing       -> return Map.empty
+
+    case parseAPI tmpl env of
+        Left err -> fail $ displayException err
+        Right api ->
+            -- <DEBUG>
+            putStrLn ("\n" ++ replicate 25 '-' ++ "\nTEMPLATE\n")
+                >> print tmpl
+                >> putStrLn ("\n" ++ replicate 25 '-' ++ "\nENV\n")
+                >> print env
+                >>
+            -- </DEBUG>
+                   runAppWith app opts api env
+
+runAppWith :: App a -> Options -> API -> Env -> IO a
+runAppWith app opts api env =
     evalStateT (runReaderT app opts) AppState { appAPI = api, appEnv = env }
 
 dispatch :: App ()

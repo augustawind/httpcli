@@ -18,7 +18,7 @@ import           Restcli.Types
 main :: IO ()
 main = do
         -- Parse command line options.
-        opts <- runCli
+        opts <- parseCli
 
         -- Compile API template.
         tmpl <- readApiTemplate $ optApiFile opts
@@ -38,7 +38,7 @@ main = do
         case api of
                 Left err -> putStr "ERROR: " >> print err >> putStrLn
                         ("\n" ++ displayException err)
-                Right val -> runApp dispatchS opts val env >>= putStrLn
+                Right val -> runAppWith dispatchS opts val env >>= putStrLn
 
         return ()
 
