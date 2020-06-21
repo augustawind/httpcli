@@ -3,11 +3,13 @@ module Restcli.App where
 import           Control.Exception
 import           Control.Monad.Reader
 import           Control.Monad.State
+import           Data.ByteString.Char8          ( ByteString )
 import qualified Data.ByteString.Char8         as B
 import qualified Data.HashMap.Strict           as Map
 import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
 import qualified Data.Yaml                     as Yaml
+import           Text.Mustache                  ( Template )
 import qualified Text.Pretty.Simple            as PP
 
 import           Restcli.Api
@@ -21,14 +23,24 @@ type App = ReaderT Options (StateT AppState IO)
 data AppState = AppState
     { appAPI :: API
     , appEnv :: Env
-    } deriving (Eq, Show)
+    , appAPITemplate :: Template
+    } deriving (Show)
 
+-- | Run the main program.
 run :: IO ()
-run = runApp dispatch
+run = runApp $ dispatch >>= liftIO . B.putStrLn
 
-runWith :: Options -> API -> Env -> IO ()
-runWith = runAppWith dispatch
+-- | Run the main program with custom Options and AppState, ignoring the
+-- commandline.
+runWith :: Options -> AppState -> IO ()
+runWith = runAppWith $ dispatch >>= liftIO . B.putStrLn
 
+-- | Run the given App with context obtained from the commandline.
+--
+-- 1. Obtains Options by parsing the commandline.
+-- 2. Creates an initial AppState by reading Template & Env files and compiling
+--    an API object from them.
+-- 3. Calls `runAppWith` with the Options and AppState.
 runApp :: App a -> IO a
 runApp app = do
     opts <- parseCli
@@ -42,38 +54,73 @@ runApp app = do
         Right api ->
             -- <DEBUG>
             let section name = putStrLn $ unlines [replicate 25 '-', name]
-            in  section "API"
-                    >> B.putStrLn (Yaml.encode api)
-                    >> section "ENV"
-                    >> B.putStrLn (Yaml.encode env)
-                    >> section "PROGRAM OUTPUT"
-                    >> -- </DEBUG>
-                       runAppWith app opts api env
+            in
+                section "API"
+                >> B.putStrLn (Yaml.encode api)
+                >> section "ENV"
+                >> B.putStrLn (Yaml.encode env)
+                >> section "PROGRAM OUTPUT"
+                >> -- </DEBUG>
+                   runAppWith
+                       app
+                       opts
+                       AppState { appAPI         = api
+                                , appEnv         = env
+                                , appAPITemplate = tmpl
+                                }
 
-runAppWith :: App a -> Options -> API -> Env -> IO a
-runAppWith app opts api env =
-    evalStateT (runReaderT app opts) AppState { appAPI = api, appEnv = env }
+-- | Run the given App with the given Options and AppState.
+runAppWith :: App a -> Options -> AppState -> IO a
+runAppWith app opts = evalStateT (runReaderT app opts)
 
-dispatch :: App ()
-dispatch = dispatchS >>= liftIO . putStrLn
-
-dispatchS :: App String
-dispatchS = ask >>= \opts -> case optCommand opts of
-    Run  path -> cmdRunS $ toText path
-    View path -> cmdViewS $ toText path
+-- | Execute the App's command, found in its Options.
+dispatch :: App ByteString
+dispatch = ask >>= \opts -> case optCommand opts of
+    Run  path -> cmdRun $ toText path
+    View path -> cmdView $ toText path
     where toText = map T.pack
 
-cmdRunS :: [Text] -> App String
-cmdRunS = undefined
+-- | Execute the `run` command.
+cmdRun :: [Text] -> App ByteString
+cmdRun = undefined
 
-cmdViewS :: [Text] -> App String
-cmdViewS path = do
+-- | Execute the `view` command.
+cmdView :: [Text] -> App ByteString
+cmdView path = do
     api <- gets appAPI
     case getApiComponent' path api of
-        Right (APIGroup       group) -> return . B.unpack $ Yaml.encode group
-        Right (APIRequest     req  ) -> return . B.unpack $ Yaml.encode req
-        Right (APIRequestAttr attr ) -> return . B.unpack $ Yaml.encode attr
+        Right (APIGroup       group) -> return $ Yaml.encode group
+        Right (APIRequest     req  ) -> return $ Yaml.encode req
+        Right (APIRequestAttr attr ) -> return $ Yaml.encode attr
         Left  err                    -> fail $ displayException err
+
+-- | Reload the App's Env.
+reloadEnv :: App Env
+reloadEnv = do
+    filePath <- asks optEnvFile
+    case filePath of
+        Nothing       -> gets appEnv
+        Just filePath -> do
+            env <- liftIO $ readEnv filePath
+            modify $ \appState -> appState { appEnv = env }
+            return env
+
+-- | Reload the App's API Template.
+reloadAPITemplate :: App Template
+reloadAPITemplate = do
+    tmpl <- asks optApiFile >>= liftIO . readApiTemplate
+    modify $ \appState -> appState { appAPITemplate = tmpl }
+    return tmpl
+
+-- | Reload the App's API, compiling it from its Template and Env.
+reloadAPI :: App API
+reloadAPI = do
+    AppState { appEnv = env, appAPITemplate = tmpl } <- get
+    case parseAPI tmpl env of
+        Left  err -> fail $ displayException err
+        Right api -> do
+            modify $ \appState -> appState { appAPI = api }
+            return api
 
 pprint :: Show a => a -> IO ()
 pprint = PP.pPrintOpt
