@@ -8,6 +8,7 @@ import qualified Data.ByteString.Char8         as B
 import qualified Data.HashMap.Strict           as Map
 import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
+import qualified Data.Text.Lazy                as LT
 import qualified Data.Yaml                     as Yaml
 import           Text.Mustache                  ( Template )
 import qualified Text.Pretty.Simple            as PP
@@ -16,6 +17,7 @@ import           Restcli.Api
 import           Restcli.Cli
 import           Restcli.Data.Encoding
 import           Restcli.Error
+import           Restcli.Requests
 import           Restcli.Types
 import           Restcli.Utils                  ( unsnoc )
 
@@ -83,7 +85,12 @@ dispatch = ask >>= \opts -> case optCommand opts of
 
 -- | Execute the `run` command.
 cmdRun :: [Text] -> App ByteString
-cmdRun = undefined
+cmdRun path = do
+    api <- gets appAPI
+    let (groupKeys, reqKey) = unsnoc path
+    case getApiRequest groupKeys reqKey api of
+        Left  err -> fail $ displayException err
+        Right req -> liftIO $ B.pack . pshow <$> sendRequest req
 
 -- | Execute the `view` command.
 cmdView :: [Text] -> App ByteString
@@ -124,6 +131,11 @@ reloadAPI = do
             return api
 
 pprint :: Show a => a -> IO ()
-pprint = PP.pPrintOpt
-    PP.NoCheckColorTty
+pprint = PP.pPrintOpt PP.NoCheckColorTty prettyOptions
+
+pshow :: Show a => a -> String
+pshow = LT.unpack . PP.pShowOpt prettyOptions
+
+prettyOptions :: PP.OutputOptions
+prettyOptions =
     PP.defaultOutputOptionsNoColor { PP.outputOptionsIndentAmount = 2 }
