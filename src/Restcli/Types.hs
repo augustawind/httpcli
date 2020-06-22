@@ -3,6 +3,7 @@
 module Restcli.Types where
 
 import qualified Data.Aeson                    as Aeson
+import qualified Data.ByteString.Lazy.Char8    as LB
 import           Data.Char                      ( isAlpha )
 import           Data.HashMap.Strict            ( HashMap )
 import           Data.Text                      ( Text )
@@ -108,3 +109,14 @@ getRequestAttr ReqUrlT     = ReqUrl . reqUrl
 getRequestAttr ReqQueryT   = ReqQuery . reqQuery
 getRequestAttr ReqHeadersT = ReqHeaders . reqHeaders
 getRequestAttr ReqBodyT    = ReqBody . reqBody
+
+------------------------------------------------------------------------
+-- HTTP responses.
+
+data HttpResponse = HttpResponse
+    { resHttpVersion :: HTTP.HttpVersion
+    , resStatusCode :: Int
+    , resStatusText :: LB.ByteString
+    , resHeaders :: HTTP.RequestHeaders
+    , resBody :: LB.ByteString
+    } deriving (Eq, Show)
