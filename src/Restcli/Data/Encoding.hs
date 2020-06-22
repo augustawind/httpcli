@@ -50,7 +50,7 @@ instance ToJSON RequestHeaders where
             in  T.concat [name', ": ", decodeUtf8 value]
 
 instance ToJSON RequestBody where
-    toJSON (ReqBodyJson body) = String . decodeUtf8 . Yaml.encode $ body
+    toJSON (RequestBody body) = String . decodeUtf8 . Yaml.encode $ body
 
 instance ToJSON RequestAttr where
     toJSON (ReqMethod  method ) = toJSON method

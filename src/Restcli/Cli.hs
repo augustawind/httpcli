@@ -1,8 +1,13 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Restcli.Cli where
 
 import           Control.Applicative            ( optional )
 import           Data.List.Split                ( splitOn )
 import           Data.Semigroup                 ( (<>) )
+import           Data.String                    ( IsString
+                                                , fromString
+                                                )
 import           Options.Applicative
 
 data Options = Options
@@ -38,4 +43,9 @@ cliOptions =
         <*> optional (option str (long "env"))  -- envFile
   where
     mkCommand (name, desc, parser) = command name (info parser (progDesc desc))
-    argDataPath = splitOn "." <$> argument str (metavar "PATH")
+    argDataPath = splitOn "." <$> argument nonEmptyStr (metavar "PATH")
+
+nonEmptyStr :: IsString s => ReadM s
+nonEmptyStr = eitherReader $ \case
+    "" -> Left "invalid argument: empty string"
+    x  -> Right $ fromString x

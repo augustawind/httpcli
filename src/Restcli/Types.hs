@@ -33,11 +33,13 @@ data Request = Request
     , reqBody :: Maybe RequestBody
     } deriving (Generic, Eq, Show)
 
-newtype RequestQuery = Query HTTP.QueryText deriving (Eq, Show)
+newtype RequestQuery = Query { runRequestQuery :: HTTP.QueryText }
+    deriving (Eq, Show)
 
-newtype RequestHeaders = Headers HTTP.RequestHeaders deriving (Eq, Show)
+newtype RequestHeaders = Headers { runRequestHeaders :: HTTP.RequestHeaders }
+    deriving (Eq, Show)
 
-newtype RequestBody = ReqBodyJson Aeson.Value
+newtype RequestBody = RequestBody { runRequestBody :: Aeson.Value }
     deriving (Eq, Show)
 
 ------------------------------------------------------------------------
@@ -46,7 +48,7 @@ newtype RequestBody = ReqBodyJson Aeson.Value
 type Env = HashMap Text Yaml.Value
 
 ------------------------------------------------------------------------
--- Abstractions for dynamically working with API's.
+-- Abstractions for dynamically working with API.
 
 data APIComponent
     = APIGroup ReqGroup

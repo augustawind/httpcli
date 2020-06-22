@@ -116,7 +116,7 @@ instance FromJSON RequestBody where
                 errorFail
                     $           errReqField body "json" "invalid JSON body"
                     `WithCause` YamlError err
-            Right val -> return . ReqBodyJson $ val
+            Right val -> return . RequestBody $ val
 
 
 errReqField :: Text -> String -> String -> Error

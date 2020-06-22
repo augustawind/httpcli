@@ -1,4 +1,3 @@
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -13,16 +12,17 @@ import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
 import           Data.Text.Encoding             ( encodeUtf8 )
 import qualified Data.Yaml                     as Yaml
-import           Network.HTTP.Req               ( HttpBody(..) )
-import qualified Network.HTTP.Req              as Req
 import           System.FilePath                ( splitFileName )
 import           Text.Mustache
 import           Text.Parsec.Error              ( ParseError )
 import           Text.Read                      ( readMaybe )
 
-import           Restcli.Error
 import           Restcli.Data.Decoding
+import           Restcli.Error
 import           Restcli.Types
+import           Restcli.Utils                  ( snoc
+                                                , unsnoc
+                                                )
 
 parseAPI :: Template -> Env -> Either Error API
 parseAPI tmpl env =
@@ -39,8 +39,7 @@ getApiComponent keys kind api
     | length keys < 2
     = Left $ APILookupError keys kind Nothing
     | otherwise
-    = let groupKeys = init keys
-          reqKey    = last keys
+    = let (groupKeys, reqKey) = unsnoc keys
       in  case kind of
               RequestKind -> APIRequest <$> getApiRequest groupKeys reqKey api
               RequestAttrKind attr ->
@@ -51,7 +50,7 @@ getApiComponent' :: [Text] -> API -> Either Error APIComponent
 getApiComponent' keys (API api) = fst <$> foldM f (APIGroup api, []) keys
   where
     f (APIGroup reqGroup, ks) k =
-        let ks' = ks ++ [k]
+        let ks' = ks `snoc` k
         in  case Map.lookup k reqGroup of
                 Just (ReqGroup group) -> Right (APIGroup group, ks')
                 Just (Req      req  ) -> Right (APIRequest req, ks')
@@ -71,7 +70,7 @@ getApiGroup []   (API api) = Right api
 getApiGroup keys (API api) = fst <$> foldM f (api, []) keys
   where
     f (reqGroup, ks) k =
-        let ks'    = ks ++ [k]
+        let ks'    = ks `snoc` k
             error' = Left . APILookupError ks' GroupKind
         in  case Map.lookup k reqGroup of
                 Just (ReqGroup group) -> Right (group, ks')
@@ -87,7 +86,7 @@ getApiRequest groupKeys reqKey api = case getApiGroup groupKeys api of
     Left APILookupError{} -> error' Nothing
   where
     error' = Left . APILookupError keys RequestKind
-    keys   = groupKeys ++ [reqKey]
+    keys   = groupKeys `snoc` reqKey
 
 getApiRequestAttr
     :: [Text] -> Text -> RequestAttrKind -> API -> Either Error RequestAttr
@@ -97,14 +96,6 @@ getApiRequestAttr groupKeys reqKey attr api =
         Left APILookupError{} ->
             Left $ APILookupError keys (RequestAttrKind attr) Nothing
     where keys = groupKeys ++ [reqKey, T.pack $ show attr]
-
-instance HttpBody (Maybe RequestBody) where
-    getRequestBody Nothing                = getRequestBody Req.NoReqBody
-    getRequestBody (Just (ReqBodyJson v)) = getRequestBody $ Req.ReqBodyJson v
-
-    getRequestContentType Nothing = getRequestContentType Req.NoReqBody
-    getRequestContentType (Just (ReqBodyJson v)) =
-        getRequestContentType $ Req.ReqBodyJson v
 
 readApiTemplate :: FilePath -> IO Template
 readApiTemplate path = do

@@ -17,6 +17,7 @@ import           Restcli.Cli
 import           Restcli.Data.Encoding
 import           Restcli.Error
 import           Restcli.Types
+import           Restcli.Utils                  ( unsnoc )
 
 type App = ReaderT Options (StateT AppState IO)
 
