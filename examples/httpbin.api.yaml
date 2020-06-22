@@ -1,0 +1,29 @@
+# A real API, using httpbin.org.
+post:
+  method: post
+  url: "{{server}}/post"
+  headers: |
+    Accept: application/json
+    Content-Type: application/json
+    Species: {{species}}
+  json: |
+    bool: true
+    num: 33.5
+    str: {{msg}}
+    object:
+      nil: null
+      array:
+        - fe
+        - fi
+        - fo
+        - fum
+get:
+  method: get
+  url: "{{server}}/get"
+  query:
+    - foo: bar
+    - foo: rab
+    - baz: quux
+    - bing: biff
+    - msg: "{{msg}}"
+    - foo: kaka
