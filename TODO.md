@@ -4,13 +4,30 @@
 
 ## Lesser Tasks
 
-- [ ] support other body types (currently only JSON is supported)
 - [x] Support ordered YAML for API and Env documents.
+- [ ] preserve order of Env during script evaluation
+- [ ] support other body types (currently only JSON is supported)
 - [ ] Support unordered YAML as well for API and Env docs.
+- Add flexibility to API and Env docs:
+    - API request groups to accept:
+        - [x] a list of singleton objects (ordered)
+        - [ ] an object (unordered)
+    - Env to accept:
+        - [x] a list of singleton objects (ordered)
+        - [ ] an object (unordered)
+    - `headers` to accept:
+        - [ ] a list of singleton objects (ordered)
+        - [ ] an object (unordered)
+        - [x] a string (http syntax)
+    - `query` to accept:
+        - [x] a list of singleton objects (ordered)
+        - [ ] an object (unordered)
+        - [ ] a string (http syntax)
 
 ## Refactoring
 
 - [x] Replace all usage of `Data.ByteString` with `Data.ByteString.Char8`.
+- [ ] make headers easier to work with in post-request scripts
 
 
 ## Overview
@@ -18,10 +35,10 @@
 - API docs & Env docs
     - [x] YAML (de)serialization
     - [x] Template rendering
-    - [ ] post-request scripting (embedded language?)
+    - [x] post-request scripting (embedded language?)
 - Requests
     - [x] Massage Request into data suitable for Req library
-    - [ ] Execute post-request scripts on local Env.
+    - [x] Execute post-request scripts on local Env.
 - Command-line interface
     - Commands:
         run: execute request from API doc
