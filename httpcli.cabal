@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2a588f91a635b4521b1f19551468661652c387c27c3de6ebcde4c460e420b71f
+-- hash: eff465ca58b6fce5bb8433264deac6d210ff97f295229df3ccfdcc888b23b80d
 
 name:           httpcli
 version:        0.1.0.0
@@ -52,6 +52,7 @@ library
     , exceptions ==0.10.4
     , filepath ==1.4.2.1
     , hslua ==1.0.3.2
+    , hslua-aeson ==1.0.2
     , http-client ==0.6.4.1
     , http-types ==0.12.3
     , insert-ordered-containers ==0.2.3.1
@@ -87,6 +88,7 @@ executable httpcli-exe
     , exceptions ==0.10.4
     , filepath ==1.4.2.1
     , hslua ==1.0.3.2
+    , hslua-aeson ==1.0.2
     , http-client ==0.6.4.1
     , http-types ==0.12.3
     , httpcli
@@ -124,6 +126,7 @@ test-suite httpcli-test
     , exceptions ==0.10.4
     , filepath ==1.4.2.1
     , hslua ==1.0.3.2
+    , hslua-aeson ==1.0.2
     , http-client ==0.6.4.1
     , http-types ==0.12.3
     , httpcli
