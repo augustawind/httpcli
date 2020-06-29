@@ -8,11 +8,13 @@ import qualified Data.CaseInsensitive          as CI
 import           Data.Char                      ( toLower
                                                 , toTitle
                                                 )
-import qualified Data.HashMap.Strict.InsOrd    as Map
+import qualified Data.HashMap.Strict           as Map
+import qualified Data.HashMap.Strict.InsOrd    as OrdMap
 import           Data.Maybe                     ( fromJust )
 import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
 import           Data.Text.Encoding
+import qualified Data.Vector                   as V
 import qualified Data.Yaml                     as Yaml
 import qualified Network.HTTP.Types            as HTTP
 import           Text.URI                       ( URI )
@@ -25,8 +27,9 @@ instance ToJSON API where
     toJSON (API api) = toJSON . ReqGroup $ api
 
 instance ToJSON ReqNode where
-    toJSON (Req      req  ) = toJSON req
-    toJSON (ReqGroup group) = object . Map.toList . Map.map toJSON $ group
+    toJSON (ReqGroup group) = Array $ OrdMap.foldrWithKey f V.empty group
+        where f k v = V.cons $ Object (Map.singleton k (toJSON v))
+    toJSON (Req req) = toJSON req
 
 instance ToJSON Request where
     toJSON     = genericToJSON aesonRequestOptions
@@ -39,7 +42,7 @@ instance ToJSON URI where
     toJSON = toJSON . URI.render
 
 instance ToJSON RequestQuery where
-    toJSON (Query query) = toJSONList . map (uncurry Map.singleton) $ query
+    toJSON (Query query) = toJSONList . map (uncurry OrdMap.singleton) $ query
 
 instance ToJSON RequestHeaders where
     toJSON (Headers headers) = String . T.unlines . map encodeHeader $ headers
