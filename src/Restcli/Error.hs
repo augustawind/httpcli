@@ -16,6 +16,7 @@ import           Restcli.Types
 data Error
     = APIParseError String String
     | APILookupError [Text] APIComponentKind (Maybe APIComponentKind)
+    | EnvLookupError Text
     | TemplateError Parsec.Error.ParseError
     | ParsecError (ParseErrorBundle Text Void)
     | YamlError Yaml.ParseException
@@ -31,6 +32,8 @@ instance Exception Error where
             ++ case found of
                    Nothing     -> ""
                    Just actual -> unwords [": found", show found, "instead"]
+    displayException (EnvLookupError key) =
+        "key '" ++ T.unpack key ++ "' not found in Env"
     displayException (TemplateError err) = show err
     displayException (ParsecError   err) = errorBundlePretty err
     displayException (YamlError     err) = Yaml.prettyPrintParseException err

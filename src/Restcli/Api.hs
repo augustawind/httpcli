@@ -44,7 +44,6 @@ getApiComponent keys kind api
               RequestAttrKind attr ->
                   APIRequestAttr <$> getApiRequestAttr groupKeys reqKey attr api
 
-
 getApiComponent' :: [Text] -> API -> Either Error APIComponent
 getApiComponent' keys (API api) = fst <$> foldM f (APIGroup api, []) keys
   where
@@ -104,6 +103,16 @@ readApiTemplate path = do
         Left err ->
             errorFail $ TemplateError err `WithMsg` "failed to compile API"
         Right tmpl -> return tmpl
+
+getEnvItem :: Text -> Env -> Either Error Value
+getEnvItem key (Env env) = case Map.lookup key env of
+    Just val -> Right val
+    Nothing  -> Left $ EnvLookupError key
+
+setEnvItem :: Text -> Value -> Env -> Either Error Env
+setEnvItem key value (Env env)
+    | Map.member key env = Right . Env $ Map.insert key value env
+    | otherwise          = Left $ EnvLookupError key
 
 readEnv :: FilePath -> IO Env
 readEnv path = do

@@ -79,8 +79,9 @@ runAppWith app opts = evalStateT (runReaderT app opts)
 -- | Execute the App's command, found in its Options.
 dispatch :: App ByteString
 dispatch = ask >>= \opts -> case optCommand opts of
-    CmdRun  path -> cmdRun $ toText path
-    CmdView path -> cmdView $ toText path
+    CmdRun  path      -> cmdRun (toText path)
+    CmdView path      -> cmdView (toText path)
+    CmdEnv path value -> cmdEnv (fmap T.pack path) (fmap B.pack value)
     where toText = map T.pack
 
 -- | Execute the `run` command.
@@ -101,6 +102,22 @@ cmdView path = do
         Right (APIRequest     req  ) -> return $ Yaml.encode req
         Right (APIRequestAttr attr ) -> return $ Yaml.encode attr
         Left  err                    -> fail $ displayException err
+
+cmdEnv :: Maybe Text -> Maybe ByteString -> App ByteString
+cmdEnv Nothing    _       = Yaml.encode <$> gets appEnv
+cmdEnv (Just key) Nothing = do
+    env <- gets appEnv
+    case getEnvItem key env of
+        Right value -> return $ Yaml.encode value
+        Left  err   -> fail $ displayException err
+cmdEnv (Just key) (Just text) = do
+    env   <- gets appEnv
+    value <- Yaml.decodeThrow text
+    case setEnvItem key value env of
+        Right env' -> do
+            modify $ \st -> st { appEnv = env' }
+            return $ Yaml.encode env'
+        Left err -> fail $ displayException err
 
 -- | Reload the App's Env.
 reloadEnv :: App Env

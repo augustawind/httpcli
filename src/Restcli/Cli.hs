@@ -6,7 +6,6 @@ module Restcli.Cli where
 
 import           Control.Applicative            ( optional )
 import           Data.List.Split                ( splitOn )
-import           Data.Maybe                     ( fromMaybe )
 import           Data.Semigroup                 ( (<>) )
 import           Data.String                    ( IsString
                                                 , fromString
@@ -22,7 +21,7 @@ data Options = Options
 data Command
     = CmdRun { cmdRunPath :: [String] }
     | CmdView { cmdViewPath :: [String] }
-    | CmdEnv { cmdEnvPath :: [String], cmdEnvValue :: Maybe String }
+    | CmdEnv { cmdEnvPath :: Maybe String, cmdEnvValue :: Maybe String }
     deriving (Eq, Show)
 
 parseCli :: IO Options
@@ -43,8 +42,9 @@ cliOptions = do
           )
         , ( "env"
           , "view or update an Env value"
-          , CmdEnv <$> (fromMaybe [] <$> optional argDataPath) <*> optional
-              (argument str (metavar "VALUE"))
+          , CmdEnv
+          <$> optional (argument nonEmptyStr (metavar "KEY"))
+          <*> optional (argument str (metavar "VALUE"))
           )
         ]
     optApiFile <- option str (long "api")
