@@ -24,7 +24,7 @@
             nil: null
             array: ["fe", "fi", "fo", "fum"]
         script: |
-          if ctx.response.status_code == 201 then
+          if ctx.response.status_code == 200 then
             ctx.env.rand = math.random() * 1000
           end
 - retrieve:

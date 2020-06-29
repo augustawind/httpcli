@@ -67,24 +67,11 @@ runApp app = do
         Nothing       -> return $ Env OrdMap.empty
 
     case parseAPI tmpl env of
-        Left err -> fail $ displayException err
-        Right api ->
-            -- <DEBUG>
-            let section name = putStrLn $ unlines [replicate 25 '-', name]
-            in
-                section "API"
-                >> B.putStrLn (Yaml.encode api)
-                >> section "ENV"
-                >> B.putStrLn (Yaml.encode env)
-                >> section "PROGRAM OUTPUT"
-                >> -- </DEBUG>
-                   runAppWith
-                       app
-                       opts
-                       AppState { appAPI         = api
-                                , appEnv         = env
-                                , appAPITemplate = tmpl
-                                }
+        Left  err -> fail $ displayException err
+        Right api -> runAppWith
+            app
+            opts
+            AppState { appAPI = api, appEnv = env, appAPITemplate = tmpl }
 
 -- | Run the given App with the given Options and AppState.
 runAppWith :: App a -> Options -> AppState -> IO a
@@ -93,7 +80,18 @@ runAppWith app opts = evalStateT (runReaderT app opts)
 -- | Execute the App's command, found in its Options.
 dispatch :: App ByteString
 dispatch = ask >>= \opts -> case optCommand opts of
-    CmdRun  path      -> cmdRun (toText path)
+    CmdRun path -> do
+        ret <- cmdRun (toText path)
+        -- <DEBUG>
+        AppState { appAPI = api, appEnv = env, ..} <- get
+        let section name = liftIO $ putStrLn $ unlines [replicate 25 '-', name]
+        section "API"
+        liftIO $ B.putStrLn (Yaml.encode api)
+        section "ENV"
+        liftIO $ B.putStrLn (Yaml.encode env)
+        section "PROGRAM OUTPUT"
+        -- </DEBUG>
+        return ret
     CmdView path      -> cmdView (toText path)
     CmdEnv path value -> cmdEnv (fmap T.pack path) (fmap B.pack value)
     where toText = map T.pack
@@ -114,15 +112,21 @@ cmdRun path = do
 
 execScript :: Text -> HttpResponse -> App ()
 execScript script res = do
-    env <- gets appEnv
-    let ctx = mkScriptContext res env
-    liftIO . Lua.run $ do
+    env  <- gets appEnv
+    env' <- liftIO . Lua.run $ do
         Lua.openlibs
         Lua.push (mkScriptContext res env) *> Lua.setglobal' "ctx"
+
         result <- Lua.dostring (encodeUtf8 script)
-        case result of
-            Lua.OK -> return ()
-            err    -> Lua.peek 1 >>= liftIO . fail
+        when (result /= Lua.OK) $ Lua.peek 1 >>= liftIO . fail
+
+        Lua.getglobal "ctx"
+        ctx <- Lua.peek =<< Lua.gettop :: Lua.Lua (HashMap String Value)
+        return $ Map.lookup "env" ctx
+    case env' of
+        Nothing          -> return ()
+        Just (Object hm) -> modify
+            $ \appState -> appState { appEnv = Env (OrdMap.fromHashMap hm) }
 
 mkScriptContext :: HttpResponse -> Env -> HashMap String Value
 mkScriptContext HttpResponse {..} (Env env) = Map.fromList

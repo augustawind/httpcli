@@ -70,12 +70,14 @@ instance Show APIComponentKind where
     show RequestKind             = "Request"
     show (RequestAttrKind attrT) = "Request '" ++ show attrT ++ "'"
 
+-- TODO: add script to all these
 data RequestAttr
     = ReqMethod HTTP.StdMethod
     | ReqUrl URI
     | ReqQuery (Maybe RequestQuery)
     | ReqHeaders (Maybe RequestHeaders)
     | ReqBody (Maybe RequestBody)
+    | ReqScript (Maybe Text)
     deriving (Generic, Eq, Show)
 
 data RequestAttrKind
@@ -84,6 +86,7 @@ data RequestAttrKind
     | ReqQueryT
     | ReqHeadersT
     | ReqBodyT
+    | ReqScriptT
     deriving (Eq)
 
 instance Show RequestAttrKind where
@@ -92,6 +95,7 @@ instance Show RequestAttrKind where
     show ReqQueryT   = "query"
     show ReqHeadersT = "headers"
     show ReqBodyT    = "json"
+    show ReqScriptT  = "script"
 
 instance Read RequestAttrKind where
     readsPrec _ input =
@@ -102,6 +106,7 @@ instance Read RequestAttrKind where
                 "query"   -> Just ReqQueryT
                 "headers" -> Just ReqHeadersT
                 "json"    -> Just ReqBodyT
+                "script"  -> Just ReqScriptT
                 _         -> Nothing
         in  maybe [] (\p -> [(p, rest)]) parsed
 
@@ -111,6 +116,7 @@ getRequestAttr ReqUrlT     = ReqUrl . reqUrl
 getRequestAttr ReqQueryT   = ReqQuery . reqQuery
 getRequestAttr ReqHeadersT = ReqHeaders . reqHeaders
 getRequestAttr ReqBodyT    = ReqBody . reqBody
+getRequestAttr ReqScriptT  = ReqScript . reqScript
 
 ------------------------------------------------------------------------
 -- HTTP responses.
