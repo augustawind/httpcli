@@ -32,6 +32,7 @@ data Request = Request
     , reqQuery :: Maybe RequestQuery
     , reqHeaders :: Maybe RequestHeaders
     , reqBody :: Maybe RequestBody
+    , reqScript :: Maybe Text
     } deriving (Generic, Eq, Show)
 
 newtype RequestQuery = Query { runRequestQuery :: HTTP.QueryText }

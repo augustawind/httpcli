@@ -27,6 +27,7 @@ dependencies:
   - containers == 0.6.2.1
   - exceptions == 0.10.4
   - filepath == 1.4.2.1
+  - hslua == 1.0.3.2
   - http-client == 0.6.4.1
   - http-types == 0.12.3
   - insert-ordered-containers == 0.2.3.1

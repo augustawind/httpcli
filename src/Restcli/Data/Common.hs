@@ -18,10 +18,11 @@ aesonRequestOptions = defaultOptions
     , ("reqQuery"  , "query")
     , ("reqHeaders", "headers")
     , ("reqBody"   , "json")
+    , ("reqScript" , "script")
     ]
 
 reqKeys :: [Text]
-reqKeys = requiredReqKeys ++ ["query", "headers", "json"]
+reqKeys = requiredReqKeys ++ ["query", "headers", "json", "script"]
 
 requiredReqKeys :: [Text]
 requiredReqKeys = ["method", "url"]
