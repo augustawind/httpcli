@@ -39,5 +39,6 @@
       - foo: kaka
     script: |
       if ctx.response.status_code == 200 and ctx.env.rand > 500 then
-        ctx.env.encoding = ctx.response.headers["Accept-Encoding"]
+        ctx.env.encoding = ctx.response.headers["accept-encoding"]
+        ctx.env.retrieved = true
       end

@@ -19,7 +19,7 @@ data Options = Options
     } deriving (Eq, Show)
 
 data Command
-    = CmdRun { cmdRunPath :: [String] }
+    = CmdRun { cmdRunPath :: [String], cmdRunSave :: Bool }
     | CmdView { cmdViewPath :: [String] }
     | CmdEnv { cmdEnvPath :: Maybe String, cmdEnvValue :: Maybe String }
     deriving (Eq, Show)
@@ -29,32 +29,53 @@ parseCli = execParser cli
 
 cli :: ParserInfo Options
 cli = info
-    (cliOptions <**> helper)
-    (fullDesc <> progDesc "run httpcli" <> header "testing the header out")
+  (cliOptions <**> helper)
+  (fullDesc <> progDesc "run httpcli" <> header "testing the header out")
 
 cliOptions :: Parser Options
 cliOptions = do
-    optCommand <- (subparser . foldMap mkCommand)
-        [ ("run", "run a request", CmdRun <$> argDataPath)
-        , ( "view"
-          , "view a group, request, or request attribute"
-          , CmdView <$> argDataPath
+  optCommand <- (subparser . foldMap mkCommand)
+    [ ( "run"
+      , "run a request"
+      , CmdRun
+      <$> (splitOn "." <$> argument
+            nonEmptyStr
+            (metavar "REQUEST" <> help "name of the request to run in the API")
           )
-        , ( "env"
-          , "view or update an Env value"
-          , CmdEnv
-          <$> optional (argument nonEmptyStr (metavar "KEY"))
-          <*> optional (argument str (metavar "VALUE"))
-          )
-        ]
-    optApiFile <- option str (long "api")
-    optEnvFile <- optional (option str (long "env"))
-    pure Options { .. }
-  where
-    mkCommand (name, desc, parser) = command name (info parser (progDesc desc))
-    argDataPath = splitOn "." <$> argument nonEmptyStr (metavar "PATH")
+      <*> switch
+            (long "save" <> short 's' <> help
+              "persist any changes to the Env, writing them to disk"
+            )
+      )
+    , ( "view"
+      , "inspect a group, request, or request attribute"
+      , CmdView
+        <$> (splitOn "." <$> argument
+              nonEmptyStr
+              (metavar "ITEM" <> help
+                "the group, request, or request attribute to view in the API"
+              )
+            )
+      )
+    , ( "env"
+      , "view or update the Env"
+      , CmdEnv
+      <$> optional
+            (argument nonEmptyStr (metavar "KEY" <> help "a key in the Env"))
+      <*> optional
+            (argument str
+                      (metavar "VALUE" <> help "a value to assign to the key")
+            )
+      )
+    ]
+  optApiFile <- option str (long "api")
+  optEnvFile <- optional (option str (long "env"))
+  pure Options { .. }
+ where
+  mkCommand (name, desc, parser) =
+    command name (info (parser <**> helper) (progDesc desc))
 
 nonEmptyStr :: IsString s => ReadM s
 nonEmptyStr = eitherReader $ \case
-    "" -> Left "invalid argument: empty string"
-    x  -> Right $ fromString x
+  "" -> Left "invalid argument: empty string"
+  x  -> Right $ fromString x

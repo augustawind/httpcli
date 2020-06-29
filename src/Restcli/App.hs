@@ -80,8 +80,8 @@ runAppWith app opts = evalStateT (runReaderT app opts)
 -- | Execute the App's command, found in its Options.
 dispatch :: App ByteString
 dispatch = ask >>= \opts -> case optCommand opts of
-    CmdRun path -> do
-        ret <- cmdRun (toText path)
+    CmdRun path save -> do
+        ret <- cmdRun (toText path) save
         -- <DEBUG>
         AppState { appAPI = api, appEnv = env, ..} <- get
         let section name = liftIO $ putStrLn $ unlines [replicate 25 '-', name]
@@ -97,8 +97,8 @@ dispatch = ask >>= \opts -> case optCommand opts of
     where toText = map T.pack
 
 -- | Execute the `run` command.
-cmdRun :: [Text] -> App ByteString
-cmdRun path = do
+cmdRun :: [Text] -> Bool -> App ByteString
+cmdRun path save = do
     api <- gets appAPI
     let (groupKeys, reqKey) = unsnoc path
     case getApiRequest groupKeys reqKey api of
@@ -107,8 +107,12 @@ cmdRun path = do
             res <- liftIO $ sendRequest req
             case reqScript req of
                 Nothing     -> return ()
-                Just script -> execScript script res
-            return . B.pack . pshow $ res
+                Just script -> do
+                    execScript script res
+                    when save $ asks optEnvFile >>= maybe
+                        (return ())
+                        (\fp -> gets appEnv >>= liftIO . saveEnv fp)
+            return $ (B.pack . pshow) res
 
 execScript :: Text -> HttpResponse -> App ()
 execScript script res = do

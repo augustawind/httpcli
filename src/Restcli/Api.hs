@@ -17,6 +17,7 @@ import           Text.Parsec.Error              ( ParseError )
 import           Text.Read                      ( readMaybe )
 
 import           Restcli.Data.Decoding
+import           Restcli.Data.Encoding
 import           Restcli.Error
 import           Restcli.Types
 import           Restcli.Utils                  ( snoc
@@ -120,3 +121,6 @@ readEnv path = do
     case decoded of
         Left  err -> errorFail $ YamlError err `WithMsg` "failed to parse Env"
         Right env -> return env
+
+saveEnv :: FilePath -> Env -> IO ()
+saveEnv = Yaml.encodeFile

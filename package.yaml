@@ -51,7 +51,7 @@ library:
   source-dirs: src
 
 executables:
-  httpcli-exe:
+  httpcli:
     main: Main.hs
     source-dirs: app
     ghc-options:

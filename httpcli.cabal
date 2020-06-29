@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: eff465ca58b6fce5bb8433264deac6d210ff97f295229df3ccfdcc888b23b80d
+-- hash: f8b97459061de09aea42eb1a405195fd7d4598673cc593ab313adfd887569baa
 
 name:           httpcli
 version:        0.1.0.0
@@ -72,7 +72,7 @@ library
     , yaml ==0.11.4.0
   default-language: Haskell2010
 
-executable httpcli-exe
+executable httpcli
   main-is: Main.hs
   other-modules:
       Paths_httpcli
