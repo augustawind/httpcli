@@ -16,6 +16,7 @@
           Accept: application/json
           Content-Type: application/json
           Species: {{ species }}
+          Species: rhino
         json: |
           bool: true
           num: 33.5
@@ -40,6 +41,6 @@
       - foo: kaka
     script: |
       if ctx.response.status_code == 200 and ctx.env.rand > 500 then
-        ctx.env.encoding = ctx.response.headers["accept-encoding"]
+        ctx.env.date = ctx.response.headers["date"]
         ctx.env.retrieved = true
       end

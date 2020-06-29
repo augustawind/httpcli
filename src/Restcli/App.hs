@@ -101,15 +101,15 @@ cmdRun path save = do
             case reqScript req of
                 Nothing     -> return ()
                 Just script -> do
-                    execScript script res
+                    execScript script req res
                     when save $ asks optEnvFile >>= maybe
                         (return ())
                         (\fp -> gets appEnv >>= liftIO . saveEnv fp)
             return $ (B.pack . pshow) res
 
-execScript :: Text -> HttpResponse -> App ()
-execScript script resp = do
-    env <- gets appEnv >>= liftIO . runScript script resp
+execScript :: Text -> HttpRequest -> HttpResponse -> App ()
+execScript script req res = do
+    env <- gets appEnv >>= liftIO . runScript script req res
     case env of
         Just env' -> modify $ \appState -> appState { appEnv = env' }
         Nothing   -> return ()
