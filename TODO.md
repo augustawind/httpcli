@@ -1,9 +1,5 @@
 # TODO
 
-## Greater Tasks
-
-## Lesser Tasks
-
 - [x] Support ordered YAML for API and Env documents.
 - [ ] preserve order of Env during script evaluation
 - [ ] support other body types (currently only JSON is supported)
@@ -23,6 +19,15 @@
         - [x] a list of singleton objects (ordered)
         - [ ] an object (unordered)
         - [ ] a string (http syntax)
+
+## Scripting engine
+
+- [ ] group-level scripts (run for each request in the group)
+- [ ] add support for pre-request scripts
+- [ ] allow importing lua libraries
+- [ ] provide small contrib library with various utilities:
+    - [ ] functions for common patterns (e.g. checking status codes, setting env variables)
+    - [ ] assertions & benchmarking tools
 
 ## Refactoring
 
