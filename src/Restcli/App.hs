@@ -127,6 +127,7 @@ execScript script res = do
         Lua.getglobal "ctx"
         ctx <- Lua.peek =<< Lua.gettop :: Lua.Lua (HashMap String Value)
         return $ Map.lookup "env" ctx
+
     case env' of
         Nothing          -> return ()
         Just (Object hm) -> modify
@@ -171,15 +172,15 @@ cmdEnv :: Maybe Text -> Maybe ByteString -> App ByteString
 cmdEnv Nothing    _       = Yaml.encode <$> gets appEnv
 cmdEnv (Just key) Nothing = do
     env <- gets appEnv
-    case getEnvItem key env of
+    case lookupEnv key env of
         Right value -> return $ Yaml.encode value
         Left  err   -> fail $ displayException err
 cmdEnv (Just key) (Just text) = do
     env   <- gets appEnv
     value <- Yaml.decodeThrow text
-    case setEnvItem key value env of
+    case insertEnv key value env of
         Right env' -> do
-            modify $ \st -> st { appEnv = env' }
+            modify $ \appState -> appState { appEnv = env' }
             return $ Yaml.encode env'
         Left err -> fail $ displayException err
 

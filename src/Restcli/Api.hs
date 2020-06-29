@@ -105,13 +105,13 @@ readApiTemplate path = do
             errorFail $ TemplateError err `WithMsg` "failed to compile API"
         Right tmpl -> return tmpl
 
-getEnvItem :: Text -> Env -> Either Error Value
-getEnvItem key (Env env) = case Map.lookup key env of
+lookupEnv :: Text -> Env -> Either Error Value
+lookupEnv key (Env env) = case Map.lookup key env of
     Just val -> Right val
     Nothing  -> Left $ EnvLookupError key
 
-setEnvItem :: Text -> Value -> Env -> Either Error Env
-setEnvItem key value (Env env)
+insertEnv :: Text -> Value -> Env -> Either Error Env
+insertEnv key value (Env env)
     | Map.member key env = Right . Env $ Map.insert key value env
     | otherwise          = Left $ EnvLookupError key
 
