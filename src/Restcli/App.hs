@@ -50,7 +50,7 @@ runApp app = do
     tmpl <- readApiTemplate $ optApiFile opts
     env  <- case optEnvFile opts of
         Just filePath -> readEnv filePath
-        Nothing       -> return Map.empty
+        Nothing       -> return $ Env Map.empty
 
     case parseAPI tmpl env of
         Left err -> fail $ displayException err

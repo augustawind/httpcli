@@ -46,7 +46,8 @@ newtype RequestBody = RequestBody { runRequestBody :: Aeson.Value }
 ------------------------------------------------------------------------
 -- Env documents.
 
-type Env = InsOrdHashMap Text Yaml.Value
+newtype Env = Env (InsOrdHashMap Text Yaml.Value)
+    deriving (Eq, Show)
 
 ------------------------------------------------------------------------
 -- Abstractions for dynamically working with API.

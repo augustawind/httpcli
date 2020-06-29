@@ -9,11 +9,13 @@ import           Data.Char                      ( toLower
                                                 , toTitle
                                                 )
 import qualified Data.HashMap.Strict           as Map
+import           Data.HashMap.Strict.InsOrd     ( InsOrdHashMap )
 import qualified Data.HashMap.Strict.InsOrd    as OrdMap
 import           Data.Maybe                     ( fromJust )
 import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
 import           Data.Text.Encoding
+import           Data.Vector                    ( Vector )
 import qualified Data.Vector                   as V
 import qualified Data.Yaml                     as Yaml
 import qualified Network.HTTP.Types            as HTTP
@@ -27,9 +29,15 @@ instance ToJSON API where
     toJSON (API api) = toJSON . ReqGroup $ api
 
 instance ToJSON ReqNode where
-    toJSON (ReqGroup group) = Array $ OrdMap.foldrWithKey f V.empty group
-        where f k v = V.cons $ Object (Map.singleton k (toJSON v))
-    toJSON (Req req) = toJSON req
+    toJSON (ReqGroup group) = ordMapToJSON group
+    toJSON (Req      req  ) = toJSON req
+
+instance ToJSON Env where
+    toJSON (Env env) = ordMapToJSON env
+
+ordMapToJSON :: (ToJSON v) => InsOrdHashMap Text v -> Value
+ordMapToJSON = Array . OrdMap.foldrWithKey f V.empty
+    where f k v = V.cons $ Object (Map.singleton k (toJSON v))
 
 instance ToJSON Request where
     toJSON     = genericToJSON aesonRequestOptions

@@ -24,8 +24,8 @@ import           Restcli.Utils                  ( snoc
                                                 )
 
 parseAPI :: Template -> Env -> Either Error API
-parseAPI tmpl env =
-    let rendered = encodeUtf8 . substitute tmpl $ Map.toHashMap env
+parseAPI tmpl (Env env) =
+    let rendered = encodeUtf8 . substitute tmpl . Map.toHashMap $ env
         parsed   = Yaml.decodeEither' rendered :: YamlParser API
     in  case parsed of
             Left  err -> Left $ YamlError err `WithMsg` "Error parsing API"

@@ -14,6 +14,7 @@ import           Data.Aeson.Types               ( JSONPathElement(..)
 import qualified Data.ByteString.Char8         as C
 import           Data.Char                      ( toUpper )
 import qualified Data.HashMap.Strict           as Map
+import           Data.HashMap.Strict.InsOrd     ( InsOrdHashMap )
 import qualified Data.HashMap.Strict.InsOrd    as OrdMap
 import           Data.List                      ( (\\)
                                                 , intercalate
@@ -42,21 +43,17 @@ import           Restcli.Data.Decoding.Headers  ( parseHeaders )
 import           Restcli.Types
 
 instance FromJSON API where
-    parseJSON = withArray "API" $ fmap API . parseReqGroup
+    parseJSON = withArray "API" $ fmap API . parseOrdMap
 
 instance FromJSON ReqNode where
-    parseJSON (Array  node) = ReqGroup <$> parseReqGroup node
+    parseJSON (Array  node) = ReqGroup <$> parseOrdMap node
     parseJSON (Object node) = Req <$> parseRequest node
     parseJSON invalid       = prependFailure
         "parsing API node failed: "
         (typeMismatch "Array or Object" invalid)
     -- more concise:
-    -- parseJSON = withArray "node" (fmap ReqGroup . parseReqGroup)
+    -- parseJSON = withArray "node" (fmap ReqGroup . parseOrdMap)
     --     <> withObject "node" (fmap Req . parseRequest)
-
-parseReqGroup :: Vector Value -> Parser ReqGroup
-parseReqGroup vec =
-    OrdMap.fromList . concatMap Map.toList . V.toList <$> V.mapM parseJSON vec
 
 parseRequest :: Object -> Parser Request
 parseRequest obj
@@ -139,3 +136,10 @@ errReqField actual field msg =
             | otherwise     = Just $ "'" ++ T.unpack actual ++ "'"
     msg' | null msg  = Nothing
          | otherwise = Just msg
+
+instance FromJSON Env where
+    parseJSON = withArray "Env" $ fmap Env . parseOrdMap
+
+parseOrdMap :: (FromJSON v) => Vector Value -> Parser (InsOrdHashMap Text v)
+parseOrdMap vec =
+    OrdMap.fromList . concatMap Map.toList . V.toList <$> V.mapM parseJSON vec
