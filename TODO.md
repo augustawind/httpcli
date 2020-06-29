@@ -4,10 +4,13 @@
 
 ## Lesser Tasks
 
-- use InsOrdHashMap to preserve ordering of api/env
-- support other body types (currently only JSON is supported)
+- [ ] support other body types (currently only JSON is supported)
+- [x] Support ordered YAML for API and Env documents.
+- [ ] Support unordered YAML as well for API and Env docs.
 
 ## Refactoring
+
+- [x] Replace all usage of `Data.ByteString` with `Data.ByteString.Char8`.
 
 
 ## Overview

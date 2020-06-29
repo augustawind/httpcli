@@ -3,7 +3,7 @@
 module Restcli.Error where
 
 import           Control.Exception
-import           Data.ByteString                ( ByteString )
+import           Data.ByteString.Char8          ( ByteString )
 import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
 import           Data.Void                      ( Void )
