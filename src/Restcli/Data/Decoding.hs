@@ -55,7 +55,7 @@ instance FromJSON ReqNode where
     -- parseJSON = withArray "node" (fmap ReqGroup . parseOrdMap)
     --     <> withObject "node" (fmap Req . parseRequest)
 
-parseRequest :: Object -> Parser Request
+parseRequest :: Object -> Parser HttpRequest
 parseRequest obj
     | not . null $ missingKeys
     = errorFail
@@ -69,7 +69,7 @@ parseRequest obj
         ++ unitems unknownKeys
     | otherwise
     = let encoded = Yaml.encode obj
-          decoded = Yaml.decodeEither' encoded :: YamlParser Request
+          decoded = Yaml.decodeEither' encoded :: YamlParser HttpRequest
       in  either (fail . show) return decoded
   where
     missingKeys = requiredReqKeys \\ Map.keys obj
@@ -77,7 +77,7 @@ parseRequest obj
     unitems     = T.unpack . T.intercalate ", " . map (surround "'")
     surround x = (x `T.append`) . (`T.append` x)
 
-instance FromJSON Request where
+instance FromJSON HttpRequest where
     parseJSON = genericParseJSON aesonRequestOptions
 
 instance FromJSON HTTP.StdMethod where

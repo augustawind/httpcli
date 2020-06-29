@@ -15,7 +15,7 @@ import qualified Text.URI                      as URI
 import           Restcli.Error
 import           Restcli.Types
 
-sendRequest :: Request -> IO HttpResponse
+sendRequest :: HttpRequest -> IO HttpResponse
 sendRequest r = toHttpResponse <$> case body of
   Just payload -> customPayloadMethodWith method options url payload
   Nothing      -> customMethodWith method options url

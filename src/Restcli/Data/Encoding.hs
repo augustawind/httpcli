@@ -39,7 +39,7 @@ ordMapToJSON :: (ToJSON v) => InsOrdHashMap Text v -> Value
 ordMapToJSON = Array . OrdMap.foldrWithKey f V.empty
     where f k v = V.cons $ Object (Map.singleton k (toJSON v))
 
-instance ToJSON Request where
+instance ToJSON HttpRequest where
     toJSON     = genericToJSON aesonRequestOptions
     toEncoding = genericToEncoding aesonRequestOptions
 

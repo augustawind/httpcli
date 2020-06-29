@@ -42,7 +42,7 @@
     - [x] Template rendering
     - [x] post-request scripting (embedded language?)
 - Requests
-    - [x] Massage Request into data suitable for Req library
+    - [x] Massage HttpRequest into data suitable for Req library
     - [x] Execute post-request scripts on local Env.
 - Command-line interface
     - Commands:

@@ -76,7 +76,7 @@ getApiGroup keys (API api) = fst <$> foldM f (api, []) keys
                 Just (Req      req  ) -> error' $ Just RequestKind
                 Nothing               -> error' Nothing
 
-getApiRequest :: [Text] -> Text -> API -> Either Error Request
+getApiRequest :: [Text] -> Text -> API -> Either Error HttpRequest
 getApiRequest groupKeys reqKey api = case getApiGroup groupKeys api of
     Right group -> case Map.lookup reqKey group of
         Just (Req      req  ) -> Right req

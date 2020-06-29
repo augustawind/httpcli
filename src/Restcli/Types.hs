@@ -21,12 +21,12 @@ type YamlParser = Either Yaml.ParseException
 newtype API = API ReqGroup
     deriving (Eq, Show)
 
-data ReqNode = Req Request | ReqGroup ReqGroup
+data ReqNode = Req HttpRequest | ReqGroup ReqGroup
     deriving (Eq, Show)
 
 type ReqGroup = InsOrdHashMap Text ReqNode
 
-data Request = Request
+data HttpRequest = HttpRequest
     { reqMethod :: HTTP.StdMethod
     , reqUrl :: URI
     , reqQuery :: Maybe RequestQuery
@@ -55,7 +55,7 @@ newtype Env = Env (InsOrdHashMap Text Yaml.Value)
 
 data APIComponent
     = APIGroup ReqGroup
-    | APIRequest Request
+    | APIRequest HttpRequest
     | APIRequestAttr RequestAttr
     deriving (Eq, Show)
 
@@ -67,8 +67,8 @@ data APIComponentKind
 
 instance Show APIComponentKind where
     show GroupKind               = "Group"
-    show RequestKind             = "Request"
-    show (RequestAttrKind attrT) = "Request '" ++ show attrT ++ "'"
+    show RequestKind             = "HttpRequest"
+    show (RequestAttrKind attrT) = "HttpRequest '" ++ show attrT ++ "'"
 
 -- TODO: add script to all these
 data RequestAttr
@@ -110,7 +110,7 @@ instance Read RequestAttrKind where
                 _         -> Nothing
         in  maybe [] (\p -> [(p, rest)]) parsed
 
-getRequestAttr :: RequestAttrKind -> Request -> RequestAttr
+getRequestAttr :: RequestAttrKind -> HttpRequest -> RequestAttr
 getRequestAttr ReqMethodT  = ReqMethod . reqMethod
 getRequestAttr ReqUrlT     = ReqUrl . reqUrl
 getRequestAttr ReqQueryT   = ReqQuery . reqQuery
