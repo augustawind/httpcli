@@ -3,31 +3,24 @@
 
 module Restcli.App where
 
-import           Control.Exception
+import           Control.Exception              ( displayException )
 import           Control.Monad.Reader
 import           Control.Monad.State
-import           Data.Aeson              hiding ( Options )
 import           Data.ByteString.Char8          ( ByteString )
 import qualified Data.ByteString.Char8         as B
 import qualified Data.ByteString.Lazy.Char8    as LB
 import qualified Data.CaseInsensitive          as CI
-import           Data.HashMap.Strict            ( HashMap )
-import qualified Data.HashMap.Strict           as Map
-import           Data.HashMap.Strict.InsOrd     ( InsOrdHashMap )
 import qualified Data.HashMap.Strict.InsOrd    as OrdMap
+import           Data.Maybe
 import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
 import qualified Data.Text.Lazy                as LT
-import           Data.Text.Encoding             ( decodeUtf8
-                                                , encodeUtf8
-                                                )
 import qualified Data.Yaml                     as Yaml
-import qualified Foreign.Lua                   as Lua
-import           Foreign.Lua.Aeson
 import           Text.Mustache                  ( Template )
 import qualified Text.Pretty.Simple            as PP
 
 import           Restcli.Api
+import           Restcli.App.Scripting
 import           Restcli.Cli
 import           Restcli.Data.Encoding
 import           Restcli.Error
@@ -115,48 +108,11 @@ cmdRun path save = do
             return $ (B.pack . pshow) res
 
 execScript :: Text -> HttpResponse -> App ()
-execScript script res = do
-    env  <- gets appEnv
-    env' <- liftIO . Lua.run $ do
-        Lua.openlibs
-        Lua.push (mkScriptContext res env) *> Lua.setglobal' "ctx"
-
-        result <- Lua.dostring (encodeUtf8 script)
-        when (result /= Lua.OK) $ Lua.peek 1 >>= liftIO . fail
-
-        Lua.getglobal "ctx"
-        ctx <- Lua.peek =<< Lua.gettop :: Lua.Lua (HashMap String Value)
-        return $ Map.lookup "env" ctx
-
-    case env' of
-        Nothing          -> return ()
-        Just (Object hm) -> modify
-            $ \appState -> appState { appEnv = Env (OrdMap.fromHashMap hm) }
-
-mkScriptContext :: HttpResponse -> Env -> HashMap String Value
-mkScriptContext HttpResponse {..} (Env env) = Map.fromList
-    [ ( "response"
-      , object
-          [ "version" .= (String . T.pack . show $ resHttpVersion)
-          , "status_code" .= (Number . fromIntegral $ resStatusCode)
-          , "status" .= String
-              (T.unwords
-                  [ T.pack . show $ resStatusCode
-                  , decodeUtf8 . LB.toStrict $ resStatusText
-                  ]
-              )
-          , "headers"
-              .= toJSON
-                     (map
-                         (\(k, v) -> (B.unpack $ CI.foldedCase k, B.unpack v))
-                         resHeaders
-                     )
-          -- TODO: add error handling (change func sig to App, or maybe just Either)
-          , "body" .= (either error id (eitherDecode' resBody) :: Value)
-          ]
-      )
-    , ("env", Object $ OrdMap.toHashMap env)
-    ]
+execScript script resp = do
+    env <- gets appEnv >>= liftIO . runScript script resp
+    case env of
+        Just env' -> modify $ \appState -> appState { appEnv = env' }
+        Nothing   -> return ()
 
 -- | Execute the `view` command.
 cmdView :: [Text] -> App ByteString
