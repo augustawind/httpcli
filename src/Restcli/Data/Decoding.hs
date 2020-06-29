@@ -8,10 +8,13 @@ import           Data.Aeson
 import           Data.Aeson.Types               ( JSONPathElement(..)
                                                 , Parser
                                                 , emptyArray
+                                                , prependFailure
+                                                , typeMismatch
                                                 )
 import qualified Data.ByteString.Char8         as C
 import           Data.Char                      ( toUpper )
 import qualified Data.HashMap.Strict           as Map
+import qualified Data.HashMap.Strict.InsOrd    as OrdMap
 import           Data.List                      ( (\\)
                                                 , intercalate
                                                 )
@@ -21,6 +24,7 @@ import           Data.Maybe                     ( catMaybes
 import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
 import           Data.Text.Encoding             ( encodeUtf8 )
+import           Data.Vector                    ( Vector )
 import qualified Data.Vector                   as V
 import           Data.Void
 import qualified Data.Yaml                     as Yaml
@@ -38,13 +42,21 @@ import           Restcli.Data.Decoding.Headers  ( parseHeaders )
 import           Restcli.Types
 
 instance FromJSON API where
-    parseJSON = genericParseJSON aesonRequestOptions
+    parseJSON = withArray "API" $ fmap API . parseReqGroup
 
 instance FromJSON ReqNode where
-    parseJSON = withObject "node" $ \node -> if any (`Map.member` node) reqKeys
-        then Req <$> parseRequest node
-        else ReqGroup <$> (sequence . Map.mapWithKey parseGroup $ node)
-        where parseGroup k v = parseJSON v <?> Key k
+    parseJSON (Array  node) = ReqGroup <$> parseReqGroup node
+    parseJSON (Object node) = Req <$> parseRequest node
+    parseJSON invalid       = prependFailure
+        "parsing API node failed: "
+        (typeMismatch "Array or Object" invalid)
+    -- more concise:
+    -- parseJSON = withArray "node" (fmap ReqGroup . parseReqGroup)
+    --     <> withObject "node" (fmap Req . parseRequest)
+
+parseReqGroup :: Vector Value -> Parser ReqGroup
+parseReqGroup vec =
+    OrdMap.fromList . concatMap Map.toList . V.toList <$> V.mapM parseJSON vec
 
 parseRequest :: Object -> Parser Request
 parseRequest obj
