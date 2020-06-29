@@ -55,11 +55,13 @@ instance Pushable HttpResponse where
     push HttpResponse {..} = withTable $ do
         "version" ~> show resHttpVersion
         "status_code" ~> resStatusCode
-        "status" ~> show resStatusCode ++ LB.unpack resStatusText
-        "headers"
-            ~> map (\(k, v) -> (B.unpack $ CI.foldedCase k, B.unpack v))
-                   resHeaders
+        "status" ~> join " " (show resStatusCode) (LB.unpack resStatusText)
+        "headers" ~> headers
         "body" ~> (either error id (eitherDecode' resBody) :: Value)
+      where
+        headers = Map.fromListWith (join ", ") (map unpackHeader resHeaders)
+        unpackHeader (k, v) = (B.unpack (CI.foldedCase k), B.unpack v)
+        join sep a b = a <> sep <> b
 
 instance Pushable Env where
     push (Env hm) = withTable $ mapM_ (uncurry (~>)) (OrdMap.toList hm)
