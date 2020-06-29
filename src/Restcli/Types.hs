@@ -5,7 +5,7 @@ module Restcli.Types where
 import qualified Data.Aeson                    as Aeson
 import qualified Data.ByteString.Lazy.Char8    as LB
 import           Data.Char                      ( isAlpha )
-import           Data.HashMap.Strict            ( HashMap )
+import           Data.HashMap.Strict.InsOrd     ( InsOrdHashMap )
 import           Data.Text                      ( Text )
 import qualified Data.Yaml                     as Yaml
 import           GHC.Generics                   ( Generic )
@@ -19,12 +19,12 @@ type YamlParser = Either Yaml.ParseException
 -- API documents.
 
 newtype API = API ReqGroup
-    deriving (Generic, Eq, Show)
+    deriving (Eq, Show)
 
 data ReqNode = Req Request | ReqGroup ReqGroup
     deriving (Eq, Show)
 
-type ReqGroup = HashMap Text ReqNode
+type ReqGroup = InsOrdHashMap Text ReqNode
 
 data Request = Request
     { reqMethod :: HTTP.StdMethod
@@ -46,7 +46,7 @@ newtype RequestBody = RequestBody { runRequestBody :: Aeson.Value }
 ------------------------------------------------------------------------
 -- Env documents.
 
-type Env = HashMap Text Yaml.Value
+type Env = InsOrdHashMap Text Yaml.Value
 
 ------------------------------------------------------------------------
 -- Abstractions for dynamically working with API.

@@ -5,8 +5,7 @@ module Restcli.Api where
 
 import           Control.Monad                  ( foldM )
 import           Data.Aeson
-import           Data.HashMap.Strict            ( HashMap )
-import qualified Data.HashMap.Strict           as Map
+import qualified Data.HashMap.Strict.InsOrd    as Map
 import           Data.List                      ( intercalate )
 import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
@@ -26,7 +25,7 @@ import           Restcli.Utils                  ( snoc
 
 parseAPI :: Template -> Env -> Either Error API
 parseAPI tmpl env =
-    let rendered = encodeUtf8 $ substitute tmpl env
+    let rendered = encodeUtf8 . substitute tmpl $ Map.toHashMap env
         parsed   = Yaml.decodeEither' rendered :: YamlParser API
     in  case parsed of
             Left  err -> Left $ YamlError err `WithMsg` "Error parsing API"

@@ -8,7 +8,7 @@ import qualified Data.CaseInsensitive          as CI
 import           Data.Char                      ( toLower
                                                 , toTitle
                                                 )
-import qualified Data.HashMap.Strict           as Map
+import qualified Data.HashMap.Strict.InsOrd    as Map
 import           Data.Maybe                     ( fromJust )
 import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
