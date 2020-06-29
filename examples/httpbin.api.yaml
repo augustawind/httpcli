@@ -25,6 +25,7 @@
             array: ["fe", "fi", "fo", "fum"]
         script: |
           if ctx.response.status_code == 200 then
+            math.randomseed(os.time())
             ctx.env.rand = math.random() * 1000
           end
 - retrieve:

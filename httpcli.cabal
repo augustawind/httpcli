@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f8b97459061de09aea42eb1a405195fd7d4598673cc593ab313adfd887569baa
+-- hash: 4d2748bf33f1a14cc7efb22ec165d1fae3bdcf67f9c706904a3d9f3c234429e5
 
 name:           httpcli
 version:        0.1.0.0
@@ -30,6 +30,7 @@ library
       Restcli
       Restcli.Api
       Restcli.App
+      Restcli.App.Scripting
       Restcli.Cli
       Restcli.Data.Common
       Restcli.Data.Decoding
