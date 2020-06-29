@@ -1,9 +1,12 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Restcli.Cli where
 
 import           Control.Applicative            ( optional )
 import           Data.List.Split                ( splitOn )
+import           Data.Maybe                     ( fromMaybe )
 import           Data.Semigroup                 ( (<>) )
 import           Data.String                    ( IsString
                                                 , fromString
@@ -17,8 +20,9 @@ data Options = Options
     } deriving (Eq, Show)
 
 data Command
-    = Run { optRunPath :: [String] }
-    | View { optViewPath :: [String] }
+    = CmdRun { cmdRunPath :: [String] }
+    | CmdView { cmdViewPath :: [String] }
+    | CmdEnv { cmdEnvPath :: [String], cmdEnvValue :: Maybe String }
     deriving (Eq, Show)
 
 parseCli :: IO Options
@@ -30,17 +34,22 @@ cli = info
     (fullDesc <> progDesc "run httpcli" <> header "testing the header out")
 
 cliOptions :: Parser Options
-cliOptions =
-    Options
-        <$> (subparser . foldMap mkCommand)
-                [ ("run", "run a request", Run <$> argDataPath)
-                , ( "view"
-                  , "inspect a group, request, or request attribute"
-                  , View <$> argDataPath
-                  )
-                ]
-        <*> option str (long "api")  -- apiFile
-        <*> optional (option str (long "env"))  -- envFile
+cliOptions = do
+    optCommand <- (subparser . foldMap mkCommand)
+        [ ("run", "run a request", CmdRun <$> argDataPath)
+        , ( "view"
+          , "view a group, request, or request attribute"
+          , CmdView <$> argDataPath
+          )
+        , ( "env"
+          , "view or update an Env value"
+          , CmdEnv <$> (fromMaybe [] <$> optional argDataPath) <*> optional
+              (argument str (metavar "VALUE"))
+          )
+        ]
+    optApiFile <- option str (long "api")
+    optEnvFile <- optional (option str (long "env"))
+    pure Options { .. }
   where
     mkCommand (name, desc, parser) = command name (info parser (progDesc desc))
     argDataPath = splitOn "." <$> argument nonEmptyStr (metavar "PATH")

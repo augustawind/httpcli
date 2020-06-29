@@ -79,8 +79,8 @@ runAppWith app opts = evalStateT (runReaderT app opts)
 -- | Execute the App's command, found in its Options.
 dispatch :: App ByteString
 dispatch = ask >>= \opts -> case optCommand opts of
-    Run  path -> cmdRun $ toText path
-    View path -> cmdView $ toText path
+    CmdRun  path -> cmdRun $ toText path
+    CmdView path -> cmdView $ toText path
     where toText = map T.pack
 
 -- | Execute the `run` command.
