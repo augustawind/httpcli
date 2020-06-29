@@ -9,7 +9,6 @@
 
 ## Refactoring
 
-- use Char8 ByteStrings uniformly everywhere (replace reg ByteStrings)
 
 ## Overview
 
