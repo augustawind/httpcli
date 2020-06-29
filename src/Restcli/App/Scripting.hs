@@ -36,16 +36,18 @@ import           Restcli.Types
 runScript :: Text -> HttpRequest -> HttpResponse -> Env -> IO (Maybe Env)
 runScript script req res env = liftIO . Lua.run $ do
     Lua.openlibs
+    Lua.dostring (B.pack "math.randomseed(os.time()); math.random();")
+        >>= assertOK
     Lua.push (Context req res env) *> Lua.setglobal' "ctx"
-
-    result <- Lua.dostring (encodeUtf8 script)
-    when (result /= Lua.OK) $ Lua.peek 1 >>= liftIO . fail
+    Lua.dostring (encodeUtf8 script) >>= assertOK
 
     Lua.getglobal "ctx"
     ctx <- Lua.peek =<< Lua.gettop :: Lua.Lua (HashMap String Value)
     return $ case Map.lookup "env" ctx of
         Just (Object hm) -> Just $ Env (OrdMap.fromHashMap hm)
         _                -> Nothing
+  where
+    assertOK status = when (status /= Lua.OK) $ Lua.peek 1 >>= liftIO . fail
 
 data Context = Context
     { ctxRequest :: HttpRequest
