@@ -20,11 +20,11 @@ import           Text.Mustache                  ( Template )
 import qualified Text.Pretty.Simple            as PP
 
 import           Restcli.Api
-import           Restcli.App.Scripting
 import           Restcli.Cli
 import           Restcli.Data.Encoding
 import           Restcli.Error
 import           Restcli.Requests
+import           Restcli.Scripting              ( runScript )
 import           Restcli.Types
 import           Restcli.Utils                  ( unsnoc )
 

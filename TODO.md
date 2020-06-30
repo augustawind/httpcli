@@ -32,7 +32,7 @@
 ## Refactoring
 
 - [x] Replace all usage of `Data.ByteString` with `Data.ByteString.Char8`.
-- [ ] make headers easier to work with in post-request scripts
+- [x] make headers easier to work with in post-request scripts
 
 
 ## Overview

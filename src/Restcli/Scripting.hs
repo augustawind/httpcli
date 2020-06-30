@@ -1,7 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Restcli.App.Scripting where
+module Restcli.Scripting
+    ( runScript
+    )
+where
 
 import           Control.Monad                  ( when )
 import           Control.Monad.IO.Class         ( liftIO )
