@@ -3,7 +3,7 @@
 - [x] Support ordered YAML for API and Env documents.
 - [x] preserve order of Env during script evaluation
 - [x] Implement REPL
-    - [ ] add support for REPL history
+    - [x] add support for REPL history
     - [ ] gracefully handle errors (don't crash)
 - [ ] Add options hierarchy: settings file -> env vars -> cli options
 - [ ] support other body types (currently only JSON is supported)

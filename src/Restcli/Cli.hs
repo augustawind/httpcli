@@ -14,8 +14,6 @@ import           Options.Applicative
 import           Options.Applicative.Types      ( readerAsk )
 import           System.FilePath                ( joinPath )
 
-import           Restcli.Utils                  ( between )
-
 data Options = Options
     { optCommand :: Command
     , optApiFile :: FilePath
@@ -83,11 +81,14 @@ cliOptions = do
       , "start an interactive prompt"
       , CmdRepl <$> option
         maybeStr
-        (long "histfile" <> short 'H' <> value (Just "") <> help
-          ("File where command history is saved.\
-            \ Pass an empty value (\"\") to disable this feature."
-          `withDefault` joinPath ["$XDG_CACHE_HOME", progName, "history"]
-          )
+        (  long "histfile"
+        <> short 'H'
+        <> value (Just "")
+        <> help
+             "File where command history is saved.\
+            \ Pass an empty value (e.g. \"\") to disable this feature."
+        <> showDefaultWith
+             (const $ joinPath ["$XDG_CACHE_HOME", progName, "history"])
         )
       )
     ]
@@ -116,7 +117,3 @@ maybeStr = strToMaybe <$> readerAsk
  where
   strToMaybe "" = Nothing
   strToMaybe s  = Just (fromString s)
-
-withDefault :: String -> String -> String
-withDefault helpTxt defaultTxt =
-  helpTxt ++ " " ++ between '(' ')' ("default: " ++ defaultTxt)
