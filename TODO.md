@@ -2,8 +2,9 @@
 
 - [x] Support ordered YAML for API and Env documents.
 - [x] preserve order of Env during script evaluation
+- [ ] Implement REPL
+- [ ] Add options hierarchy: settings file -> env vars -> cli options
 - [ ] support other body types (currently only JSON is supported)
-- [ ] Support unordered YAML as well for API and Env docs.
 - Add flexibility to API and Env docs:
     - API request groups to accept:
         - [x] a list of singleton objects (ordered)
