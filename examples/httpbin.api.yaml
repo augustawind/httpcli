@@ -39,7 +39,7 @@
       - msg: "{{msg}}"
       - foo: kaka
     script: |
-      if ctx.response.status_code == 200 and ctx.env.rand > 500 then
+      if ctx.response.status_code == 200 and ctx.env.rand and ctx.env.rand > 500 then
         ctx.env.date = ctx.response.headers["date"]
         ctx.env.retrieved = true
       end

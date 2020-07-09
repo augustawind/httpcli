@@ -73,8 +73,8 @@ runAppWith app opts = evalStateT (runReaderT app opts)
 -- | Execute the App's command, found in its Options.
 dispatch :: App ByteString
 dispatch = ask >>= \opts -> case optCommand opts of
-    CmdRun path save -> do
-        ret <- cmdRun (toText path) save
+    CmdRun path -> do
+        ret <- cmdRun (toText path) (optSave opts)
         -- <DEBUG>
         AppState { appAPI = api, appEnv = env, ..} <- get
         let section name = liftIO $ putStrLn $ unlines [replicate 25 '-', name]

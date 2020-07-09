@@ -47,9 +47,11 @@ runScript script req res env = liftIO . Lua.run $ do
     Lua.getglobal "ctx"
     ctx <- Lua.peek =<< Lua.gettop :: Lua.Lua (HashMap String Value)
     return $ case Map.lookup "env" ctx of
-        Just (Object hm') ->
-            let (Env hm) = env
-            in  Just $ Env (hm `OrdMap.union` OrdMap.fromHashMap hm')
+        Just (Object hm) ->
+            let (Env t1) = env
+                t2       = OrdMap.fromHashMap hm
+                merge    = OrdMap.unionWith (curry snd)
+            in  Just $ Env (merge t1 t2)
         _ -> Nothing
   where
     assertOK status = when (status /= Lua.OK) $ Lua.peek 1 >>= liftIO . fail

@@ -16,10 +16,11 @@ data Options = Options
     { optCommand :: Command
     , optApiFile :: FilePath
     , optEnvFile :: Maybe FilePath
+    , optSave :: Bool
     } deriving (Eq, Show)
 
 data Command
-    = CmdRun { cmdRunPath :: [String], cmdRunSave :: Bool }
+    = CmdRun { cmdRunPath :: [String] }
     | CmdView { cmdViewPath :: [String] }
     | CmdEnv { cmdEnvPath :: Maybe String, cmdEnvValue :: Maybe String }
     deriving (Eq, Show)
@@ -38,13 +39,10 @@ cliOptions = do
     [ ( "run"
       , "run a request"
       , CmdRun
-      <$> (splitOn "." <$> argument
-            nonEmptyStr
-            (metavar "REQUEST" <> help "name of the request to run in the API")
-          )
-      <*> switch
-            (long "save" <> short 's' <> help
-              "persist any changes to the Env, writing them to disk"
+        <$> (splitOn "." <$> argument
+              nonEmptyStr
+              (metavar "REQUEST" <> help "name of the request to run in the API"
+              )
             )
       )
     , ( "view"
@@ -69,7 +67,11 @@ cliOptions = do
       )
     ]
   optApiFile <- option str (long "api")
-  optEnvFile <- optional (option str (long "env"))
+  optEnvFile <- optional $ option str (long "env")
+  optSave    <- switch
+    (long "save" <> short 's' <> help
+      "persist any changes to the Env, writing them to disk"
+    )
   pure Options { .. }
  where
   mkCommand (name, desc, parser) =
