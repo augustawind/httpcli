@@ -1,7 +1,7 @@
 # TODO
 
 - [x] Support ordered YAML for API and Env documents.
-- [ ] preserve order of Env during script evaluation
+- [x] preserve order of Env during script evaluation
 - [ ] support other body types (currently only JSON is supported)
 - [ ] Support unordered YAML as well for API and Env docs.
 - Add flexibility to API and Env docs:
