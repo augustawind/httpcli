@@ -11,6 +11,7 @@ import           Data.ByteString.Char8          ( ByteString )
 import qualified Data.ByteString.Char8         as B
 import qualified Data.ByteString.Lazy.Char8    as LB
 import qualified Data.CaseInsensitive          as CI
+import           Data.Char                      ( isSpace )
 import qualified Data.HashMap.Strict.InsOrd    as OrdMap
 import           Data.Maybe
 import           Data.Text                      ( Text )
@@ -19,6 +20,12 @@ import qualified Data.Text.Lazy                as LT
 import qualified Data.Yaml                     as Yaml
 import           Options.Applicative            ( handleParseResult )
 import           System.Console.Haskeline
+import           System.Directory               ( XdgDirectory(..)
+                                                , canonicalizePath
+                                                , createDirectoryIfMissing
+                                                , getXdgDirectory
+                                                )
+import           System.FilePath                ( (</>) )
 import           Text.Mustache                  ( Template )
 import qualified Text.Pretty.Simple            as PP
 
@@ -40,8 +47,6 @@ data AppState = AppState
     , appEnv :: Env
     , appAPITemplate :: Template
     } deriving (Show)
-
-type Repl = InputT IO
 
 replPrompt :: String
 replPrompt = "> "
@@ -98,7 +103,7 @@ dispatch = ask >>= \opts -> case optCommand opts of
         return ret
     CmdView path      -> cmdView (toText path)
     CmdEnv path value -> cmdEnv (fmap T.pack path) (fmap B.pack value)
-    CmdRepl           -> cmdRepl
+    CmdRepl histfile  -> cmdRepl histfile
     where toText = map T.pack
 
 -- | Execute the `run` command.
@@ -152,14 +157,24 @@ cmdEnv (Just key) (Just text) = do
         Just fp -> liftIO $ saveEnv fp env'
     return $ Yaml.encode env'
 
-cmdRepl :: App ByteString
-cmdRepl = do
-    opts <- ask
-    liftIO $ runInputT defaultSettings repl
+cmdRepl :: Maybe FilePath -> App ByteString
+cmdRepl histfileArg = do
+    histfile <- liftIO $ case histfileArg of
+        Just path
+            | null path || all isSpace path -> do
+                dir <- getXdgDirectory XdgCache progName
+                createDirectoryIfMissing True dir
+                return . Just $ dir </> "history"
+            | otherwise -> Just <$> canonicalizePath path
+        Nothing -> return Nothing
+    let settings = defaultSettings { autoAddHistory = True
+                                   , historyFile    = histfile
+                                   }
+    liftIO $ runInputT settings repl
     return B.empty
 
 -- TODO: allow initial options to be specified, and options to persist between commands
-repl :: Repl ()
+repl :: InputT IO ()
 repl = getInputLine replPrompt >>= \case
     Nothing -> return ()
     Just s  -> do

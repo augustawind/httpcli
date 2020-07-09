@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f77b3e7258b58afbd044a136a8daad4a1bd76e6bcf94ff99b8af8b0873990934
+-- hash: 0c2c4af7b2f8595b37a291a348ab0914fa64e90e21b2c44d7ab6e7ccff84b142
 
 name:           httpcli
 version:        0.1.0.0
@@ -50,6 +50,7 @@ library
     , bytestring ==0.10.10.0
     , case-insensitive ==1.2.1.0
     , containers ==0.6.2.1
+    , directory ==1.3.6.0
     , exceptions ==0.10.4
     , filepath ==1.4.2.1
     , haskeline ==0.7.5.0
@@ -89,6 +90,7 @@ executable httpcli
     , bytestring ==0.10.10.0
     , case-insensitive ==1.2.1.0
     , containers ==0.6.2.1
+    , directory ==1.3.6.0
     , exceptions ==0.10.4
     , filepath ==1.4.2.1
     , haskeline ==0.7.5.0
@@ -130,6 +132,7 @@ test-suite httpcli-test
     , bytestring ==0.10.10.0
     , case-insensitive ==1.2.1.0
     , containers ==0.6.2.1
+    , directory ==1.3.6.0
     , exceptions ==0.10.4
     , filepath ==1.4.2.1
     , haskeline ==0.7.5.0
