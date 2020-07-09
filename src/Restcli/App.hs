@@ -6,7 +6,7 @@ module Restcli.App where
 
 import           Control.Exception              ( displayException )
 import           Control.Monad.Reader
-import           Control.Monad.State
+import           Control.Monad.State.Strict
 import           Data.ByteString.Char8          ( ByteString )
 import qualified Data.ByteString.Char8         as B
 import qualified Data.ByteString.Lazy.Char8    as LB
@@ -17,6 +17,8 @@ import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
 import qualified Data.Text.Lazy                as LT
 import qualified Data.Yaml                     as Yaml
+import           Options.Applicative            ( handleParseResult )
+import           System.Console.Haskeline
 import           Text.Mustache                  ( Template )
 import qualified Text.Pretty.Simple            as PP
 
@@ -27,7 +29,9 @@ import           Restcli.Error
 import           Restcli.Requests
 import           Restcli.Scripting              ( runScript )
 import           Restcli.Types
-import           Restcli.Utils                  ( unsnoc )
+import           Restcli.Utils                  ( tokenize
+                                                , unsnoc
+                                                )
 
 type App = ReaderT Options (StateT AppState IO)
 
@@ -37,39 +41,45 @@ data AppState = AppState
     , appAPITemplate :: Template
     } deriving (Show)
 
+type Repl = InputT IO
+
+replPrompt :: String
+replPrompt = "> "
+
 -- | Run the main program.
+-- This is a convenience wrapper that runs `dispatch` and prints the result.
 run :: IO ()
 run = runApp $ dispatch >>= liftIO . B.putStrLn
 
--- | Run the main program with custom Options and AppState, ignoring the
--- commandline.
-runWith :: Options -> AppState -> IO ()
-runWith = runAppWith $ dispatch >>= liftIO . B.putStrLn
-
 -- | Run the given App with context obtained from the commandline.
 --
--- 1. Obtains Options by parsing the commandline.
--- 2. Creates an initial AppState by reading Template & Env files and compiling
---    an API object from them.
+-- 1. Obtains Options from the commandline.
+-- 2. Loads initial AppState.
 -- 3. Calls `runAppWith` with the Options and AppState.
 runApp :: App a -> IO a
 runApp app = do
-    opts <- parseCli
-    tmpl <- readApiTemplate $ optApiFile opts
-    env  <- case optEnvFile opts of
-        Just filePath -> readEnv filePath
-        Nothing       -> return $ Env OrdMap.empty
-
-    case parseAPI tmpl env of
-        Left  err -> fail $ displayException err
-        Right api -> runAppWith
-            app
-            opts
-            AppState { appAPI = api, appEnv = env, appAPITemplate = tmpl }
+    opts     <- parseCli
+    appState <- initAppState opts
+    runAppWith app opts appState
 
 -- | Run the given App with the given Options and AppState.
 runAppWith :: App a -> Options -> AppState -> IO a
 runAppWith app opts = evalStateT (runReaderT app opts)
+
+-- | Create an initial AppState by reading Template & Env files and compiling
+-- an API object from them.
+initAppState :: Options -> IO AppState
+initAppState opts = do
+    tmpl <- readApiTemplate $ optApiFile opts
+    env  <- case optEnvFile opts of
+        Just filePath -> readEnv filePath
+        Nothing       -> return $ Env OrdMap.empty
+    case parseAPI tmpl env of
+        Left  err -> fail $ displayException err
+        Right api -> return AppState { appAPI         = api
+                                     , appEnv         = env
+                                     , appAPITemplate = tmpl
+                                     }
 
 -- | Execute the App's command, found in its Options.
 dispatch :: App ByteString
@@ -88,6 +98,7 @@ dispatch = ask >>= \opts -> case optCommand opts of
         return ret
     CmdView path      -> cmdView (toText path)
     CmdEnv path value -> cmdEnv (fmap T.pack path) (fmap B.pack value)
+    CmdRepl           -> cmdRepl
     where toText = map T.pack
 
 -- | Execute the `run` command.
@@ -112,7 +123,7 @@ execScript :: Text -> HttpRequest -> HttpResponse -> App ()
 execScript script req res =
     gets appEnv >>= liftIO . runScript script req res >>= \case
         Nothing  -> return ()
-        Just env -> modify $ \appState -> appState { appEnv = env }
+        Just env -> modify' $ \appState -> appState { appEnv = env }
 
 -- | Execute the `view` command.
 cmdView :: [Text] -> App ByteString
@@ -135,11 +146,28 @@ cmdEnv (Just key) (Just text) = do
     env   <- gets appEnv
     value <- Yaml.decodeThrow text
     let env' = insertEnv key value env
-    modify $ \appState -> appState { appEnv = env' }
+    modify' $ \appState -> appState { appEnv = env' }
     asks optEnvFile >>= \case
         Nothing -> return ()
         Just fp -> liftIO $ saveEnv fp env'
     return $ Yaml.encode env'
+
+cmdRepl :: App ByteString
+cmdRepl = do
+    opts <- ask
+    liftIO $ runInputT defaultSettings repl
+    return B.empty
+
+-- TODO: allow initial options to be specified, and options to persist between commands
+repl :: Repl ()
+repl = getInputLine replPrompt >>= \case
+    Nothing -> return ()
+    Just s  -> do
+        liftIO $ do
+            opts  <- handleParseResult $ parseCliCommand (tokenize s)
+            state <- initAppState opts
+            runAppWith dispatch opts state >>= B.putStrLn
+        repl
 
 -- | Reload the App's Env.
 reloadEnv :: App Env
@@ -149,14 +177,14 @@ reloadEnv = do
         Nothing       -> gets appEnv
         Just filePath -> do
             env <- liftIO $ readEnv filePath
-            modify $ \appState -> appState { appEnv = env }
+            modify' $ \appState -> appState { appEnv = env }
             return env
 
 -- | Reload the App's API Template.
 reloadAPITemplate :: App Template
 reloadAPITemplate = do
     tmpl <- asks optApiFile >>= liftIO . readApiTemplate
-    modify $ \appState -> appState { appAPITemplate = tmpl }
+    modify' $ \appState -> appState { appAPITemplate = tmpl }
     return tmpl
 
 -- | Reload the App's API, compiling it from its Template and Env.
@@ -166,7 +194,7 @@ reloadAPI = do
     case parseAPI tmpl env of
         Left  err -> fail $ displayException err
         Right api -> do
-            modify $ \appState -> appState { appAPI = api }
+            modify' $ \appState -> appState { appAPI = api }
             return api
 
 pprint :: Show a => a -> IO ()

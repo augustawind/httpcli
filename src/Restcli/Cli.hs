@@ -23,10 +23,14 @@ data Command
     = CmdRun { cmdRunPath :: [String] }
     | CmdView { cmdViewPath :: [String] }
     | CmdEnv { cmdEnvPath :: Maybe String, cmdEnvValue :: Maybe String }
+    | CmdRepl
     deriving (Eq, Show)
 
 parseCli :: IO Options
 parseCli = execParser cli
+
+parseCliCommand :: [String] -> ParserResult Options
+parseCliCommand = execParserPure defaultPrefs cli
 
 cli :: ParserInfo Options
 cli = info
@@ -65,6 +69,7 @@ cliOptions = do
                       (metavar "VALUE" <> help "a value to assign to the key")
             )
       )
+    , ("repl", "start an interactive prompt", pure CmdRepl)
     ]
   optApiFile <- option str (long "api")
   optEnvFile <- optional $ option str (long "env")

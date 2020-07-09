@@ -27,6 +27,7 @@ dependencies:
   - containers == 0.6.2.1
   - exceptions == 0.10.4
   - filepath == 1.4.2.1
+  - haskeline == 0.7.5.0
   - hslua == 1.0.3.2
   - hslua-aeson == 1.0.2
   - http-client == 0.6.4.1
@@ -40,6 +41,8 @@ dependencies:
   - parsec == 3.1.14.0
   - pretty-simple == 3.2.3.0
   - optparse-applicative == 0.15.1.0
+  - raw-strings-qq == 1.1
+  - regex-pcre-builtin >= 0.95.1 && < 0.95.2
   - split == 0.2.3.4
   - text == 1.2.4.0
   - unordered-containers == 0.2.10.0
