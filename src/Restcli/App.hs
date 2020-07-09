@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -102,17 +103,16 @@ cmdRun path save = do
                 Nothing     -> return ()
                 Just script -> do
                     execScript script req res
-                    when save $ asks optEnvFile >>= maybe
-                        (return ())
-                        (\fp -> gets appEnv >>= liftIO . saveEnv fp)
+                    when save $ asks optEnvFile >>= \case
+                        Nothing -> return ()
+                        Just fp -> gets appEnv >>= liftIO . saveEnv fp
             return $ (B.pack . pshow) res
 
 execScript :: Text -> HttpRequest -> HttpResponse -> App ()
-execScript script req res = do
-    env <- gets appEnv >>= liftIO . runScript script req res
-    case env of
-        Just env' -> modify $ \appState -> appState { appEnv = env' }
-        Nothing   -> return ()
+execScript script req res =
+    gets appEnv >>= liftIO . runScript script req res >>= \case
+        Nothing  -> return ()
+        Just env -> modify $ \appState -> appState { appEnv = env }
 
 -- | Execute the `view` command.
 cmdView :: [Text] -> App ByteString
@@ -134,11 +134,12 @@ cmdEnv (Just key) Nothing = do
 cmdEnv (Just key) (Just text) = do
     env   <- gets appEnv
     value <- Yaml.decodeThrow text
-    case insertEnv key value env of
-        Right env' -> do
-            modify $ \appState -> appState { appEnv = env' }
-            return $ Yaml.encode env'
-        Left err -> fail $ displayException err
+    let env' = insertEnv key value env
+    modify $ \appState -> appState { appEnv = env' }
+    asks optEnvFile >>= \case
+        Nothing -> return ()
+        Just fp -> liftIO $ saveEnv fp env'
+    return $ Yaml.encode env'
 
 -- | Reload the App's Env.
 reloadEnv :: App Env

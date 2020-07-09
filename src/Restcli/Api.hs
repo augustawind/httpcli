@@ -5,7 +5,7 @@ module Restcli.Api where
 
 import           Control.Monad                  ( foldM )
 import           Data.Aeson
-import qualified Data.HashMap.Strict.InsOrd    as Map
+import qualified Data.HashMap.Strict.InsOrd    as OrdMap
 import           Data.List                      ( intercalate )
 import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
@@ -26,7 +26,7 @@ import           Restcli.Utils                  ( snoc
 
 parseAPI :: Template -> Env -> Either Error API
 parseAPI tmpl (Env env) =
-    let rendered = encodeUtf8 . substitute tmpl . Map.toHashMap $ env
+    let rendered = encodeUtf8 . substitute tmpl . OrdMap.toHashMap $ env
         parsed   = Yaml.decodeEither' rendered :: YamlParser API
     in  case parsed of
             Left  err -> Left $ YamlError err `WithMsg` "Error parsing API"
@@ -50,7 +50,7 @@ getApiComponent' keys (API api) = fst <$> foldM f (APIGroup api, []) keys
   where
     f (APIGroup reqGroup, ks) k =
         let ks' = ks `snoc` k
-        in  case Map.lookup k reqGroup of
+        in  case OrdMap.lookup k reqGroup of
                 Just (ReqGroup group) -> Right (APIGroup group, ks')
                 Just (Req      req  ) -> Right (APIRequest req, ks')
                 Nothing               -> error' ks' GroupKind
@@ -71,14 +71,14 @@ getApiGroup keys (API api) = fst <$> foldM f (api, []) keys
     f (reqGroup, ks) k =
         let ks'    = ks `snoc` k
             error' = Left . APILookupError ks' GroupKind
-        in  case Map.lookup k reqGroup of
+        in  case OrdMap.lookup k reqGroup of
                 Just (ReqGroup group) -> Right (group, ks')
                 Just (Req      req  ) -> error' $ Just RequestKind
                 Nothing               -> error' Nothing
 
 getApiRequest :: [Text] -> Text -> API -> Either Error HttpRequest
 getApiRequest groupKeys reqKey api = case getApiGroup groupKeys api of
-    Right group -> case Map.lookup reqKey group of
+    Right group -> case OrdMap.lookup reqKey group of
         Just (Req      req  ) -> Right req
         Just (ReqGroup group) -> error' $ Just GroupKind
         Nothing               -> error' Nothing
@@ -106,14 +106,12 @@ readApiTemplate path = do
         Right tmpl -> return tmpl
 
 lookupEnv :: Text -> Env -> Either Error Value
-lookupEnv key (Env env) = case Map.lookup key env of
+lookupEnv key (Env env) = case OrdMap.lookup key env of
     Just val -> Right val
     Nothing  -> Left $ EnvLookupError key
 
-insertEnv :: Text -> Value -> Env -> Either Error Env
-insertEnv key value (Env env)
-    | Map.member key env = Right . Env $ Map.insert key value env
-    | otherwise          = Left $ EnvLookupError key
+insertEnv :: Text -> Value -> Env -> Env
+insertEnv key value (Env env) = Env $ OrdMap.insert key value env
 
 readEnv :: FilePath -> IO Env
 readEnv path = do
