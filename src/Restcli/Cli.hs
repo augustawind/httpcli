@@ -97,13 +97,19 @@ cliOptions environ = do
     ]
   optApiFile <- option
     nonEmptyStr
-    (long "api" <> short 'a' <> envvar "HTTPCLI_API" environ <> help
-      "path to an API spec file"
+    (  long "api"
+    <> short 'a'
+    <> envvar "HTTPCLI_API" environ
+    <> metavar "PATH"
+    <> help "path to an API spec file"
     )
   optEnvFile <- optional $ option
     nonEmptyStr
-    (long "env" <> short 'e' <> envvar "HTTPCLI_ENV" environ <> help
-      "path to an Environment file"
+    (  long "env"
+    <> short 'e'
+    <> envvar "HTTPCLI_ENV" environ
+    <> metavar "PATH"
+    <> help "path to an Environment file"
     )
   optSave <- switch
     (long "save" <> short 's' <> help
@@ -126,4 +132,7 @@ maybeStr = strToMaybe <$> readerAsk
   strToMaybe s  = Just (fromString s)
 
 envvar :: (HasValue f, IsString a) => String -> [(String, String)] -> Mod f a
-envvar key environ = maybe idm (value . fromString) $ lookup key environ
+envvar key environ = valueMod <> showDefaultMod
+ where
+  valueMod       = maybe idm (value . fromString) $ lookup key environ
+  showDefaultMod = showDefaultWith (const $ '$' : key)
