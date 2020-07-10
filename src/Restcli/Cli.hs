@@ -5,6 +5,7 @@
 module Restcli.Cli where
 
 import           Control.Applicative            ( optional )
+import qualified Data.ByteString.Lazy.Char8    as LB
 import           Data.List.Split                ( splitOn )
 import           Data.Semigroup                 ( (<>) )
 import           Data.String                    ( IsString
@@ -12,6 +13,7 @@ import           Data.String                    ( IsString
                                                 )
 import           Options.Applicative
 import           Options.Applicative.Types      ( readerAsk )
+import           System.Environment
 import           System.FilePath                ( joinPath )
 
 data Options = Options
@@ -31,21 +33,22 @@ data Command
 progName :: String
 progName = "httpcli"
 
-parseCli :: IO Options
-parseCli = execParser cli
+parseCli :: [(String, String)] -> IO Options
+parseCli = execParser . cli
 
-parseCliCommand :: [String] -> ParserResult Options
-parseCliCommand = execParserPure defaultPrefs cli
+parseCliCommand :: [String] -> [(String, String)] -> ParserResult Options
+parseCliCommand argv environ = execParserPure parserPrefs (cli environ) argv
+  where parserPrefs = prefs $ showHelpOnEmpty <> showHelpOnError
 
-cli :: ParserInfo Options
-cli = info
-  (cliOptions <**> helper)
+cli :: [(String, String)] -> ParserInfo Options
+cli environ = info
+  (cliOptions environ <**> helper)
   (fullDesc <> header
     (progName ++ " - a command-line HTTP client for API development")
   )
 
-cliOptions :: Parser Options
-cliOptions = do
+cliOptions :: [(String, String)] -> Parser Options
+cliOptions environ = do
   optCommand <- (subparser . foldMap mkCommand)
     [ ( "run"
       , "run a request"
@@ -94,10 +97,14 @@ cliOptions = do
     ]
   optApiFile <- option
     nonEmptyStr
-    (long "api" <> short 'a' <> help "path to an API spec file")
+    (long "api" <> short 'a' <> envvar "HTTPCLI_API" environ <> help
+      "path to an API spec file"
+    )
   optEnvFile <- optional $ option
     nonEmptyStr
-    (long "env" <> short 'e' <> help "path to an Environment file")
+    (long "env" <> short 'e' <> envvar "HTTPCLI_ENV" environ <> help
+      "path to an Environment file"
+    )
   optSave <- switch
     (long "save" <> short 's' <> help
       "save changes made to the Environment from request scripts"
@@ -117,3 +124,6 @@ maybeStr = strToMaybe <$> readerAsk
  where
   strToMaybe "" = Nothing
   strToMaybe s  = Just (fromString s)
+
+envvar :: (HasValue f, IsString a) => String -> [(String, String)] -> Mod f a
+envvar key environ = maybe idm (value . fromString) $ lookup key environ

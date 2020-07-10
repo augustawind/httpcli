@@ -25,6 +25,7 @@ import           System.Directory               ( XdgDirectory(..)
                                                 , createDirectoryIfMissing
                                                 , getXdgDirectory
                                                 )
+import           System.Environment             ( getEnvironment )
 import           System.FilePath                ( (</>) )
 import           Text.Mustache                  ( Template )
 import qualified Text.Pretty.Simple            as PP
@@ -63,7 +64,7 @@ run = runApp $ dispatch >>= liftIO . B.putStrLn
 -- 3. Calls `runAppWith` with the Options and AppState.
 runApp :: App a -> IO a
 runApp app = do
-    opts     <- parseCli
+    opts     <- getEnvironment >>= parseCli
     appState <- initAppState opts
     runAppWith app opts appState
 
@@ -140,6 +141,7 @@ cmdView path = do
         Right (APIRequestAttr attr ) -> return $ Yaml.encode attr
         Left  err                    -> fail $ displayException err
 
+-- | Execute the `env` command.
 cmdEnv :: Maybe Text -> Maybe ByteString -> App ByteString
 cmdEnv Nothing    _       = Yaml.encode <$> gets appEnv
 cmdEnv (Just key) Nothing = do
@@ -157,6 +159,7 @@ cmdEnv (Just key) (Just text) = do
         Just fp -> liftIO $ saveEnv fp env'
     return $ Yaml.encode env'
 
+-- | Execute the `repl` command.
 cmdRepl :: Maybe FilePath -> App ByteString
 cmdRepl histfileArg = do
     histfile <- liftIO $ case histfileArg of
@@ -179,8 +182,10 @@ repl = getInputLine replPrompt >>= \case
     Nothing -> return ()
     Just s  -> do
         liftIO $ do
-            opts  <- handleParseResult $ parseCliCommand (tokenize s)
-            state <- initAppState opts
+            let argv = tokenize s
+            sysenv <- getEnvironment
+            opts   <- handleParseResult $ parseCliCommand argv sysenv
+            state  <- initAppState opts
             runAppWith dispatch opts state >>= B.putStrLn
         repl
 
