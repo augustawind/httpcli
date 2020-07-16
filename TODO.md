@@ -1,11 +1,7 @@
 # TODO
 
-- [x] Support ordered YAML for API and Env documents.
-- [x] preserve order of Env during script evaluation
 - [x] Implement REPL
-    - [x] add support for REPL history
     - [ ] gracefully handle errors (don't crash)
-- [x] Add options hierarchy: settings file -> env vars -> cli options
 - [ ] support other body types (currently only JSON is supported)
 
 ## Improvements
@@ -37,9 +33,6 @@
     - [ ] assertions & benchmarking tools
 
 ## Refactoring
-
-- [x] Replace all usage of `Data.ByteString` with `Data.ByteString.Char8`.
-- [x] make headers easier to work with in post-request scripts
 
 
 ## Overview
