@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Restcli.Data.Encoding where
 
@@ -14,7 +15,7 @@ import qualified Data.HashMap.Strict.InsOrd    as OrdMap
 import           Data.Maybe                     ( fromJust )
 import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
-import           Data.Text.Encoding
+import           Data.Text.Encoding             ( decodeUtf8 )
 import           Data.Vector                    ( Vector )
 import qualified Data.Vector                   as V
 import qualified Data.Yaml                     as Yaml
@@ -50,15 +51,11 @@ instance ToJSON URI where
     toJSON = toJSON . URI.render
 
 instance ToJSON RequestQuery where
-    toJSON (Query query) = toJSONList . map (uncurry OrdMap.singleton) $ query
+    toJSON (RequestQuery query) =
+        toJSONList $ map (uncurry OrdMap.singleton) query
 
 instance ToJSON RequestHeaders where
-    toJSON (Headers headers) = String . T.unlines . map encodeHeader $ headers
-      where
-        encodeHeader (name, value) =
-            let nameParts = T.split (== '-') . decodeUtf8 $ CI.original name
-                name'     = T.intercalate "-" $ map toTitleCase nameParts
-            in  T.concat [name', ": ", decodeUtf8 value]
+    toJSON (RequestHeaders headers) = String . encodeHeaders $ headers
 
 instance ToJSON RequestBody where
     toJSON (RequestBody body) = String . decodeUtf8 . Yaml.encode $ body
@@ -69,6 +66,14 @@ instance ToJSON RequestAttr where
     toJSON (ReqQuery   query  ) = toJSON query
     toJSON (ReqHeaders headers) = toJSON headers
     toJSON (ReqBody    body   ) = toJSON body
+
+encodeHeaders :: [HTTP.Header] -> Text
+encodeHeaders = T.unlines . map encodeHeader
+  where
+    encodeHeader (name, value) =
+        let nameParts = T.split (== '-') . decodeUtf8 $ CI.original name
+            name'     = T.intercalate "-" $ map toTitleCase nameParts
+        in  T.concat [name', ": ", decodeUtf8 value]
 
 toTitleCase :: Text -> Text
 toTitleCase word = case T.uncons word of

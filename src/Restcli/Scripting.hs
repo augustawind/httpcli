@@ -73,11 +73,11 @@ instance Pushable HttpRequest where
         "url" ~> URI.render reqUrl
         "query" ~> case reqQuery of
             Nothing -> Map.empty
-            Just (Query query) ->
+            Just (RequestQuery query) ->
                 Map.fromListWith (++) . map (second maybeToList) $ query
         "headers" ~> case reqHeaders of
-            Nothing                -> Map.empty
-            Just (Headers headers) -> mkHeaderMap headers
+            Nothing                       -> Map.empty
+            Just (RequestHeaders headers) -> mkHeaderMap headers
         "body" ~> case reqBody of
             Nothing                 -> Null
             Just (RequestBody body) -> body

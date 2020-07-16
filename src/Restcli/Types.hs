@@ -35,13 +35,13 @@ data HttpRequest = HttpRequest
     , reqScript :: Maybe Text
     } deriving (Generic, Eq, Show)
 
-newtype RequestQuery = Query { runRequestQuery :: HTTP.QueryText }
+newtype RequestQuery = RequestQuery { unRequestQuery :: HTTP.QueryText }
     deriving (Eq, Show)
 
-newtype RequestHeaders = Headers { runRequestHeaders :: HTTP.RequestHeaders }
+newtype RequestHeaders = RequestHeaders { unRequestHeaders :: [HTTP.Header] }
     deriving (Eq, Show)
 
-newtype RequestBody = RequestBody { runRequestBody :: Aeson.Value }
+newtype RequestBody = RequestBody { unRequestBody :: Aeson.Value }
     deriving (Eq, Show)
 
 ------------------------------------------------------------------------
@@ -124,7 +124,7 @@ getRequestAttr ReqScriptT  = ReqScript . reqScript
 data HttpResponse = HttpResponse
     { resHttpVersion :: HTTP.HttpVersion
     , resStatusCode :: Int
-    , resStatusText :: LB.ByteString
-    , resHeaders :: HTTP.RequestHeaders
+    , resStatusText :: Text
+    , resHeaders :: [HTTP.Header]
     , resBody :: LB.ByteString
     } deriving (Eq, Show)

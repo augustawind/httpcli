@@ -6,6 +6,7 @@ import           Control.Lens
 import           Data.Aeson                     ( toJSON )
 import qualified Data.ByteString.Lazy.Char8    as LB
 import           Data.Maybe                     ( maybeToList )
+import           Data.Text.Encoding             ( decodeUtf8 )
 import           Network.HTTP.Client            ( responseVersion )
 import qualified Network.HTTP.Types            as HTTP
 import           Network.Wreq
@@ -16,21 +17,21 @@ import           Restcli.Error
 import           Restcli.Types
 
 sendRequest :: HttpRequest -> IO HttpResponse
-sendRequest r = toHttpResponse <$> case body of
+sendRequest HttpRequest {..} = toHttpResponse <$> case body of
   Just payload -> customPayloadMethodWith method options url payload
   Nothing      -> customMethodWith method options url
  where
-  body    = runRequestBody <$> reqBody r
-  method  = show $ reqMethod r
-  url     = URI.renderStr $ reqUrl r
+  body    = unRequestBody <$> reqBody
+  method  = show reqMethod
+  url     = URI.renderStr reqUrl
   options = defaults & query & headers'
-  query   = case reqQuery r of
-    Nothing         -> id
-    Just (Query qs) -> \opts -> foldl f opts qs
+  query   = case reqQuery of
+    Nothing                -> id
+    Just (RequestQuery qs) -> \opts -> foldl f opts qs
     where f opts (k, v) = opts & param k .~ maybeToList v
-  headers' = case reqHeaders r of
-    Nothing           -> id
-    Just (Headers hs) -> \opts -> foldl f opts hs
+  headers' = case reqHeaders of
+    Nothing                  -> id
+    Just (RequestHeaders hs) -> \opts -> foldl f opts hs
     where f opts (k, v) = opts & header k .~ [v]
 
 toHttpResponse :: Response LB.ByteString -> HttpResponse
@@ -38,6 +39,6 @@ toHttpResponse r = HttpResponse { .. }
  where
   resHttpVersion = responseVersion r
   resStatusCode  = r ^. responseStatus . statusCode
-  resStatusText  = LB.fromStrict $ r ^. responseStatus . statusMessage
+  resStatusText  = decodeUtf8 $ r ^. responseStatus . statusMessage
   resHeaders     = r ^. responseHeaders
   resBody        = r ^. responseBody

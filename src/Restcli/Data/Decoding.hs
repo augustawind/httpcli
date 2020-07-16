@@ -100,7 +100,7 @@ instance FromJSON RequestQuery where
     -- TODO: allow for no-value keys
     parseJSON =
         withArray "query"
-            $ fmap (Query . concatMap Map.toList . V.toList)
+            $ fmap (RequestQuery . concatMap Map.toList . V.toList)
             . mapM parseQueryItems
       where
         parseQueryItems = withObject "query item" $ mapM parseQueryVal
@@ -115,7 +115,7 @@ instance FromJSON RequestHeaders where
                 errorFail
                     $           errReqField headers "headers" "invalid headers"
                     `WithCause` ParsecError err
-            Right val -> return . Headers $ val
+            Right val -> return . RequestHeaders $ val
 
 instance FromJSON RequestBody where
     -- TODO: allow for other body types
