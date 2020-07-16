@@ -5,7 +5,7 @@
 - [x] Implement REPL
     - [x] add support for REPL history
     - [ ] gracefully handle errors (don't crash)
-- [ ] Add options hierarchy: settings file -> env vars -> cli options
+- [x] Add options hierarchy: settings file -> env vars -> cli options
 - [ ] support other body types (currently only JSON is supported)
 
 ## Improvements
