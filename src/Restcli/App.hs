@@ -30,8 +30,8 @@ import           System.FilePath                ( (</>) )
 import           Text.Mustache                  ( Template )
 import qualified Text.Pretty.Simple            as PP
 
-import           Restcli.Api
-import           Restcli.Cli
+import           Restcli.Data
+import           Restcli.CLI
 import           Restcli.Data.Encoding
 import           Restcli.Error
 import           Restcli.Requests
@@ -64,7 +64,7 @@ run = runApp $ dispatch >>= liftIO . B.putStrLn
 -- 3. Calls `runAppWith` with the Options and AppState.
 runApp :: App a -> IO a
 runApp app = do
-    opts     <- getEnvironment >>= parseCli
+    opts     <- getEnvironment >>= parseCLI
     appState <- initAppState opts
     runAppWith app opts appState
 
@@ -76,7 +76,7 @@ runAppWith app opts = evalStateT (runReaderT app opts)
 -- an API object from them.
 initAppState :: Options -> IO AppState
 initAppState opts = do
-    tmpl <- readApiTemplate $ optApiFile opts
+    tmpl <- readAPITemplate $ optAPIFile opts
     env  <- case optEnvFile opts of
         Just filePath -> readEnv filePath
         Nothing       -> return $ Env OrdMap.empty
@@ -112,7 +112,7 @@ cmdRun :: [Text] -> Bool -> App ByteString
 cmdRun path save = do
     api <- gets appAPI
     let (groupKeys, reqKey) = unsnoc path
-    case getApiRequest groupKeys reqKey api of
+    case getAPIRequest groupKeys reqKey api of
         Left  err -> fail $ displayException err
         Right req -> do
             res <- liftIO $ sendRequest req
@@ -135,7 +135,7 @@ execScript script req res =
 cmdView :: [Text] -> App ByteString
 cmdView path = do
     api <- gets appAPI
-    case getApiComponent' path api of
+    case getAPIComponent' path api of
         Right (APIGroup       group) -> return $ Yaml.encode group
         Right (APIRequest     req  ) -> return $ Yaml.encode req
         Right (APIRequestAttr attr ) -> return $ Yaml.encode attr
@@ -184,7 +184,7 @@ repl = getInputLine replPrompt >>= \case
         liftIO $ do
             let argv = tokenize s
             sysenv <- getEnvironment
-            opts   <- handleParseResult $ parseCliCommand argv sysenv
+            opts   <- handleParseResult $ parseCLICommand argv sysenv
             state  <- initAppState opts
             runAppWith dispatch opts state >>= B.putStrLn
         repl
@@ -203,7 +203,7 @@ reloadEnv = do
 -- | Reload the App's API Template.
 reloadAPITemplate :: App Template
 reloadAPITemplate = do
-    tmpl <- asks optApiFile >>= liftIO . readApiTemplate
+    tmpl <- asks optAPIFile >>= liftIO . readAPITemplate
     modify' $ \appState -> appState { appAPITemplate = tmpl }
     return tmpl
 

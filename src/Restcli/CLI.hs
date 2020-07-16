@@ -2,7 +2,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Restcli.Cli where
+module Restcli.CLI where
 
 import           Control.Applicative            ( optional )
 import qualified Data.ByteString.Lazy.Char8    as LB
@@ -18,7 +18,7 @@ import           System.FilePath                ( joinPath )
 
 data Options = Options
     { optCommand :: Command
-    , optApiFile :: FilePath
+    , optAPIFile :: FilePath
     , optEnvFile :: Maybe FilePath
     , optSave :: Bool
     } deriving (Eq, Show)
@@ -35,11 +35,11 @@ type Environ = [(String, String)]
 progName :: String
 progName = "httpcli"
 
-parseCli :: Environ -> IO Options
-parseCli = execParser . cli
+parseCLI :: Environ -> IO Options
+parseCLI = execParser . cli
 
-parseCliCommand :: [String] -> Environ -> ParserResult Options
-parseCliCommand argv environ = execParserPure parserPrefs (cli environ) argv
+parseCLICommand :: [String] -> Environ -> ParserResult Options
+parseCLICommand argv environ = execParserPure parserPrefs (cli environ) argv
   where parserPrefs = prefs $ showHelpOnEmpty <> showHelpOnError
 
 cli :: Environ -> ParserInfo Options
@@ -97,7 +97,7 @@ cliOptions environ = do
         )
       )
     ]
-  optApiFile <- option
+  optAPIFile <- option
     nonEmptyStr
     (  long "api"
     <> short 'a'
@@ -137,4 +137,4 @@ envvar :: (HasValue f, IsString a) => String -> Environ -> Mod f a
 envvar key environ = valueMod <> showDefaultMod
  where
   valueMod       = maybe idm (value . fromString) $ lookup key environ
-  showDefaultMod = showDefaultWith (const $ '$' : key)
+  showDefaultMod = showDefaultWith $ const ('$' : key)

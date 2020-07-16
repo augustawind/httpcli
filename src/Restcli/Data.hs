@@ -1,7 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Restcli.Api where
+module Restcli.Data where
 
 import           Control.Monad                  ( foldM )
 import           Data.Aeson
@@ -32,21 +32,21 @@ parseAPI tmpl (Env env) =
             Left  err -> Left $ YamlError err `WithMsg` "Error parsing API"
             Right api -> return api
 
-getApiComponent
+getAPIComponent
     :: [Text] -> APIComponentKind -> API -> Either Error APIComponent
-getApiComponent keys GroupKind api = APIGroup <$> getApiGroup keys api
-getApiComponent keys kind api
+getAPIComponent keys GroupKind api = APIGroup <$> getAPIGroup keys api
+getAPIComponent keys kind api
     | length keys < 2
     = Left $ APILookupError keys kind Nothing
     | otherwise
     = let (groupKeys, reqKey) = unsnoc keys
       in  case kind of
-              RequestKind -> APIRequest <$> getApiRequest groupKeys reqKey api
+              RequestKind -> APIRequest <$> getAPIRequest groupKeys reqKey api
               RequestAttrKind attr ->
-                  APIRequestAttr <$> getApiRequestAttr groupKeys reqKey attr api
+                  APIRequestAttr <$> getAPIRequestAttr groupKeys reqKey attr api
 
-getApiComponent' :: [Text] -> API -> Either Error APIComponent
-getApiComponent' keys (API api) = fst <$> foldM f (APIGroup api, []) keys
+getAPIComponent' :: [Text] -> API -> Either Error APIComponent
+getAPIComponent' keys (API api) = fst <$> foldM f (APIGroup api, []) keys
   where
     f (APIGroup reqGroup, ks) k =
         let ks' = ks `snoc` k
@@ -64,9 +64,9 @@ getApiComponent' keys (API api) = fst <$> foldM f (APIGroup api, []) keys
     error' ks kind = Left $ APILookupError ks kind Nothing
 
 
-getApiGroup :: [Text] -> API -> Either Error ReqGroup
-getApiGroup []   (API api) = Right api
-getApiGroup keys (API api) = fst <$> foldM f (api, []) keys
+getAPIGroup :: [Text] -> API -> Either Error ReqGroup
+getAPIGroup []   (API api) = Right api
+getAPIGroup keys (API api) = fst <$> foldM f (api, []) keys
   where
     f (reqGroup, ks) k =
         let ks'    = ks `snoc` k
@@ -76,8 +76,8 @@ getApiGroup keys (API api) = fst <$> foldM f (api, []) keys
                 Just (Req      req  ) -> error' $ Just RequestKind
                 Nothing               -> error' Nothing
 
-getApiRequest :: [Text] -> Text -> API -> Either Error HttpRequest
-getApiRequest groupKeys reqKey api = case getApiGroup groupKeys api of
+getAPIRequest :: [Text] -> Text -> API -> Either Error HttpRequest
+getAPIRequest groupKeys reqKey api = case getAPIGroup groupKeys api of
     Right group -> case OrdMap.lookup reqKey group of
         Just (Req      req  ) -> Right req
         Just (ReqGroup group) -> error' $ Just GroupKind
@@ -87,17 +87,17 @@ getApiRequest groupKeys reqKey api = case getApiGroup groupKeys api of
     error' = Left . APILookupError keys RequestKind
     keys   = groupKeys `snoc` reqKey
 
-getApiRequestAttr
+getAPIRequestAttr
     :: [Text] -> Text -> RequestAttrKind -> API -> Either Error RequestAttr
-getApiRequestAttr groupKeys reqKey attr api =
-    case getApiRequest groupKeys reqKey api of
+getAPIRequestAttr groupKeys reqKey attr api =
+    case getAPIRequest groupKeys reqKey api of
         Right req -> Right . getRequestAttr attr $ req
         Left APILookupError{} ->
             Left $ APILookupError keys (RequestAttrKind attr) Nothing
     where keys = groupKeys ++ [reqKey, T.pack $ show attr]
 
-readApiTemplate :: FilePath -> IO Template
-readApiTemplate path = do
+readAPITemplate :: FilePath -> IO Template
+readAPITemplate path = do
     let (apiDir, apiFileName) = splitFileName path
     compiled <- automaticCompile [apiDir] apiFileName
     case compiled of
