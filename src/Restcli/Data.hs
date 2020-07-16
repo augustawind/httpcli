@@ -23,12 +23,12 @@ import           Restcli.Utils                  ( snoc
                                                 , unsnoc
                                                 )
 
-parseAPI :: Template -> Env -> Either Error API
-parseAPI tmpl (Env env) =
+parseAPI :: Template -> Env -> FilePath -> Either Error API
+parseAPI tmpl (Env env) fp =
     let rendered = encodeUtf8 . substitute tmpl . OrdMap.toHashMap $ env
         parsed   = Yaml.decodeEither' rendered :: YamlParser API
     in  case parsed of
-            Left  err -> Left $ YamlError err `WithMsg` "Error parsing API"
+            Left  err -> Left $ YamlError err `withFilePath` fp
             Right api -> return api
 
 getAPIComponent
@@ -116,7 +116,7 @@ readEnv :: FilePath -> IO Env
 readEnv path = do
     decoded <- Yaml.decodeFileEither path
     case decoded of
-        Left  err -> errorFail $ YamlError err `WithMsg` "failed to parse Env"
+        Left  err -> errorFail $ YamlError err `withFilePath` path
         Right env -> return env
 
 saveEnv :: FilePath -> Env -> IO ()

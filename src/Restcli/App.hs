@@ -76,11 +76,12 @@ runAppWith app opts = evalStateT (runReaderT app opts)
 -- an API object from them.
 initAppState :: Options -> IO AppState
 initAppState opts = do
-    tmpl <- readAPITemplate $ optAPIFile opts
+    let apiFile = optAPIFile opts
+    tmpl <- readAPITemplate apiFile
     env  <- case optEnvFile opts of
         Just filePath -> readEnv filePath
         Nothing       -> return $ Env OrdMap.empty
-    case parseAPI tmpl env of
+    case parseAPI tmpl env apiFile of
         Left  err -> fail $ displayException err
         Right api -> return AppState { appAPI         = api
                                      , appEnv         = env
@@ -137,7 +138,9 @@ cmdView path = do
         Right (APIGroup       group) -> return $ Yaml.encode group
         Right (APIRequest     req  ) -> return $ Yaml.encode req
         Right (APIRequestAttr attr ) -> return $ Yaml.encode attr
-        Left  err                    -> fail $ displayException err
+        Left err ->
+            fail . displayException . withFilePath err =<< asks optAPIFile
+
 
 -- | Execute the `env` command.
 cmdEnv :: Maybe Text -> Maybe ByteString -> App ByteString
@@ -146,7 +149,9 @@ cmdEnv (Just key) Nothing = do
     env <- gets appEnv
     case lookupEnv key env of
         Right value -> return $ Yaml.encode value
-        Left  err   -> fail $ displayException err
+        Left  err   -> do
+            err' <- maybe err (withFilePath err) <$> asks optEnvFile
+            fail . displayException $ err'
 cmdEnv (Just key) (Just text) = do
     env   <- gets appEnv
     value <- Yaml.decodeThrow text
@@ -198,22 +203,24 @@ reloadEnv = do
             modify' $ \appState -> appState { appEnv = env }
             return env
 
+-- | Reload the App's API, compiling it from its Template and Env.
+reloadAPI :: App API
+reloadAPI = do
+    tmpl    <- reloadAPITemplate
+    env     <- gets appEnv
+    apiFile <- asks optAPIFile
+    case parseAPI tmpl env apiFile of
+        Left  err -> fail $ displayException err
+        Right api -> do
+            modify' $ \appState -> appState { appAPI = api }
+            return api
+
 -- | Reload the App's API Template.
 reloadAPITemplate :: App Template
 reloadAPITemplate = do
     tmpl <- asks optAPIFile >>= liftIO . readAPITemplate
     modify' $ \appState -> appState { appAPITemplate = tmpl }
     return tmpl
-
--- | Reload the App's API, compiling it from its Template and Env.
-reloadAPI :: App API
-reloadAPI = do
-    AppState { appEnv = env, appAPITemplate = tmpl } <- get
-    case parseAPI tmpl env of
-        Left  err -> fail $ displayException err
-        Right api -> do
-            modify' $ \appState -> appState { appAPI = api }
-            return api
 
 pprint :: Show a => a -> IO ()
 pprint = PP.pPrintOpt PP.NoCheckColorTty prettyOptions

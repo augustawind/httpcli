@@ -59,12 +59,12 @@ parseRequest :: Object -> Parser HttpRequest
 parseRequest obj
     | not . null $ missingKeys
     = errorFail
-        .  APISpecError RequestKind []
+        .  APISpecError RequestKind
         $  "missing required key(s) "
         ++ unitems missingKeys
     | not . null $ unknownKeys
     = errorFail
-        .  APISpecError RequestKind []
+        .  APISpecError RequestKind
         $  "extra key(s) "
         ++ unitems unknownKeys
     | otherwise
@@ -83,10 +83,8 @@ instance FromJSON HttpRequest where
 instance FromJSON HTTP.StdMethod where
     parseJSON = withText "method" $ \method ->
         case readEither . map toUpper $ T.unpack method of
-            Left err -> errorFail $ errReqAttr ReqMethodT
-                                               ["method"]
-                                               method
-                                               "method not recognized"
+            Left err ->
+                errorFail $ errReqAttr ReqMethodT method "method not recognized"
             Right method -> return method
 
 instance FromJSON URI where
@@ -94,7 +92,7 @@ instance FromJSON URI where
         case runParser (URI.parser :: Parsec Void Text URI) "" uri of
             Left err ->
                 errorFail
-                    $           errReqAttr ReqUrlT ["url"] uri ""
+                    $           errReqAttr ReqUrlT uri ""
                     `WithCause` ParsecError err
             Right val -> return val
 
@@ -115,7 +113,7 @@ instance FromJSON RequestHeaders where
         case runParser parseHeaders "" headers of
             Left err ->
                 errorFail
-                    $           errReqAttr ReqHeadersT ["headers"] headers ""
+                    $           errReqAttr ReqHeadersT headers ""
                     `WithCause` ParsecError err
             Right val -> return . RequestHeaders $ val
 
@@ -125,13 +123,13 @@ instance FromJSON RequestBody where
         case Yaml.decodeEither' $ encodeUtf8 body :: YamlParser Value of
             Left err ->
                 errorFail
-                    $           errReqAttr ReqBodyT ["json"] body ""
+                    $           errReqAttr ReqBodyT body ""
                     `WithCause` YamlError err
             Right val -> return . RequestBody $ val
 
-errReqAttr :: RequestAttrKind -> DataPath -> Text -> String -> Error
-errReqAttr kind path actual msg =
-    APISpecError (RequestAttrKind kind) path
+errReqAttr :: RequestAttrKind -> Text -> String -> Error
+errReqAttr kind actual msg =
+    APISpecError (RequestAttrKind kind)
         . intercalate ": "
         . catMaybes
         $ [actual', msg']
