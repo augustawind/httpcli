@@ -127,5 +127,5 @@ data HttpResponse = HttpResponse
     , resStatusText :: Text
     , resHeaders :: [HTTP.Header]
     , resBody :: LB.ByteString
-    , resJSON :: Either SomeException Aeson.Value
+    , resJSON :: Maybe (Either SomeException Aeson.Value)
     } deriving (Show)

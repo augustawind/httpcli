@@ -12,7 +12,6 @@ import           Data.Char                      ( toLower
 import qualified Data.HashMap.Strict           as Map
 import           Data.HashMap.Strict.InsOrd     ( InsOrdHashMap )
 import qualified Data.HashMap.Strict.InsOrd    as OrdMap
-import           Data.Maybe                     ( fromJust )
 import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
 import           Data.Text.Encoding             ( decodeUtf8 )
@@ -78,7 +77,7 @@ instance ToJSON HttpResponse where
         , "json" .= bodyJSON
         ]
       where
-        bodyJSON  = either (const Nothing) Just resJSON
+        bodyJSON  = either (const Nothing) Just =<< resJSON
         statusMsg = T.unwords [T.pack . show $ resStatusCode, resStatusText]
 
 encodeHeaders :: [HTTP.Header] -> Text
