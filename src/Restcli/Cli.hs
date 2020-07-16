@@ -30,24 +30,26 @@ data Command
     | CmdRepl { cmdReplHistFile :: Maybe FilePath }
     deriving (Eq, Show)
 
+type Environ = [(String, String)]
+
 progName :: String
 progName = "httpcli"
 
-parseCli :: [(String, String)] -> IO Options
+parseCli :: Environ -> IO Options
 parseCli = execParser . cli
 
-parseCliCommand :: [String] -> [(String, String)] -> ParserResult Options
+parseCliCommand :: [String] -> Environ -> ParserResult Options
 parseCliCommand argv environ = execParserPure parserPrefs (cli environ) argv
   where parserPrefs = prefs $ showHelpOnEmpty <> showHelpOnError
 
-cli :: [(String, String)] -> ParserInfo Options
+cli :: Environ -> ParserInfo Options
 cli environ = info
   (cliOptions environ <**> helper)
   (fullDesc <> header
     (progName ++ " - a command-line HTTP client for API development")
   )
 
-cliOptions :: [(String, String)] -> Parser Options
+cliOptions :: Environ -> Parser Options
 cliOptions environ = do
   optCommand <- (subparser . foldMap mkCommand)
     [ ( "run"
@@ -131,7 +133,7 @@ maybeStr = strToMaybe <$> readerAsk
   strToMaybe "" = Nothing
   strToMaybe s  = Just (fromString s)
 
-envvar :: (HasValue f, IsString a) => String -> [(String, String)] -> Mod f a
+envvar :: (HasValue f, IsString a) => String -> Environ -> Mod f a
 envvar key environ = valueMod <> showDefaultMod
  where
   valueMod       = maybe idm (value . fromString) $ lookup key environ
