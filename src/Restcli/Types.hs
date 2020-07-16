@@ -2,6 +2,7 @@
 
 module Restcli.Types where
 
+import           Control.Monad.Catch            ( SomeException )
 import qualified Data.Aeson                    as Aeson
 import qualified Data.ByteString.Lazy.Char8    as LB
 import           Data.Char                      ( isAlpha )
@@ -10,7 +11,6 @@ import           Data.Text                      ( Text )
 import qualified Data.Yaml                     as Yaml
 import           GHC.Generics                   ( Generic )
 import qualified Network.HTTP.Types            as HTTP
-import           Text.Read
 import           Text.URI                       ( URI(..) )
 
 type YamlParser = Either Yaml.ParseException
@@ -127,4 +127,5 @@ data HttpResponse = HttpResponse
     , resStatusText :: Text
     , resHeaders :: [HTTP.Header]
     , resBody :: LB.ByteString
-    } deriving (Eq, Show)
+    , resJSON :: Either SomeException Aeson.Value
+    } deriving (Show)

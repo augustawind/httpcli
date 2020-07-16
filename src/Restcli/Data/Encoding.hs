@@ -71,11 +71,15 @@ instance ToJSON RequestAttr where
 instance ToJSON HttpResponse where
     toJSON HttpResponse {..} = object
         [ "http_version" .= show resHttpVersion
-        , "status" .= T.unwords [T.pack . show $ resStatusCode, resStatusText]
+        , "status" .= statusMsg
         , "status_code" .= resStatusCode
         , "headers" .= encodeHeaders resHeaders
         , "body" .= TL.decodeUtf8 resBody
+        , "json" .= bodyJSON
         ]
+      where
+        bodyJSON  = either (const Nothing) Just resJSON
+        statusMsg = T.unwords [T.pack . show $ resStatusCode, resStatusText]
 
 encodeHeaders :: [HTTP.Header] -> Text
 encodeHeaders = T.unlines . map encodeHeader

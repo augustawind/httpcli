@@ -3,7 +3,6 @@
 module Restcli.Requests where
 
 import           Control.Lens
-import           Data.Aeson                     ( toJSON )
 import qualified Data.ByteString.Lazy.Char8    as LB
 import           Data.Maybe                     ( maybeToList )
 import           Data.Text.Encoding             ( decodeUtf8 )
@@ -42,3 +41,4 @@ toHttpResponse r = HttpResponse { .. }
   resStatusText  = decodeUtf8 $ r ^. responseStatus . statusMessage
   resHeaders     = r ^. responseHeaders
   resBody        = r ^. responseBody
+  resJSON        = asValue r >>= \res -> Right $ res ^. responseBody

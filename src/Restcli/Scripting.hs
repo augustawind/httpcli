@@ -59,7 +59,7 @@ data Context = Context
     { ctxRequest :: HttpRequest
     , ctxResponse :: HttpResponse
     , ctxEnv :: Env
-    } deriving (Eq, Show)
+    } deriving (Show)
 
 instance Pushable Context where
     push Context {..} = withTable $ do
