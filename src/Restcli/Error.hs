@@ -13,9 +13,11 @@ import qualified Text.Parsec.Error             as Parsec.Error
 
 import           Restcli.Types
 
+type DataPath = [Text]
+
 data Error
-    = APIParseError String String
-    | APILookupError [Text] APIComponentKind (Maybe APIComponentKind)
+    = APISpecError APIComponentKind DataPath String
+    | APILookupError DataPath APIComponentKind (Maybe APIComponentKind)
     | EnvLookupError Text
     | TemplateError Parsec.Error.ParseError
     | ParsecError (ParseErrorBundle Text Void)
@@ -25,13 +27,13 @@ data Error
     deriving (Show)
 
 instance Exception Error where
-    displayException (APIParseError subject msg) =
-        "invalid " ++ subject ++ ": " ++ msg
+    displayException (APISpecError kind path msg)
+        | null path = "invalid API spec: " ++ msg
+        | otherwise = "invalid Request at " ++ fmtDataPath path ++ ": " ++ msg
     displayException (APILookupError keys expected found) =
-        unwords ["no", show expected, "at", T.unpack . T.intercalate "." $ keys]
-            ++ case found of
-                   Nothing     -> ""
-                   Just actual -> unwords [": found", show found, "instead"]
+        unwords ["no", show expected, "at", fmtDataPath keys] ++ case found of
+            Nothing     -> ""
+            Just actual -> unwords [": found", show found, "instead"]
     displayException (EnvLookupError key) =
         "key '" ++ T.unpack key ++ "' not found in Env"
     displayException (TemplateError err) = show err
@@ -43,3 +45,6 @@ instance Exception Error where
 
 errorFail :: (MonadFail m) => Error -> m a
 errorFail = fail . displayException
+
+fmtDataPath :: DataPath -> String
+fmtDataPath = T.unpack . T.intercalate "."

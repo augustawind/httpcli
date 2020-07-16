@@ -13,7 +13,6 @@ import           Data.Text.Encoding             ( encodeUtf8 )
 import qualified Data.Yaml                     as Yaml
 import           System.FilePath                ( splitFileName )
 import           Text.Mustache
-import           Text.Parsec.Error              ( ParseError )
 import           Text.Read                      ( readMaybe )
 
 import           Restcli.Data.Decoding
