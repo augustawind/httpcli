@@ -9,7 +9,6 @@ import           Control.Monad.Reader
 import           Control.Monad.State.Strict
 import           Data.ByteString.Char8          ( ByteString )
 import qualified Data.ByteString.Char8         as B
-import qualified Data.ByteString.Lazy.Char8    as LB
 import qualified Data.CaseInsensitive          as CI
 import           Data.Char                      ( isSpace )
 import qualified Data.HashMap.Strict.InsOrd    as OrdMap

@@ -5,7 +5,6 @@
 module Restcli.CLI where
 
 import           Control.Applicative            ( optional )
-import qualified Data.ByteString.Lazy.Char8    as LB
 import           Data.List.Split                ( splitOn )
 import           Data.Semigroup                 ( (<>) )
 import           Data.String                    ( IsString

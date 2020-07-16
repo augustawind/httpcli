@@ -127,7 +127,6 @@ instance FromJSON RequestBody where
                     `WithCause` YamlError err
             Right val -> return . RequestBody $ val
 
-
 errReqField :: Text -> String -> String -> Error
 errReqField actual field msg =
     APIParseError field . intercalate ": " . catMaybes $ [actual', msg']

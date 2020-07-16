@@ -11,7 +11,6 @@ import           Control.Monad.IO.Class         ( liftIO )
 import           Data.Aeson              hiding ( Options )
 import           Data.Bifunctor                 ( second )
 import qualified Data.ByteString.Char8         as B
-import qualified Data.ByteString.Lazy.Char8    as LB
 import qualified Data.CaseInsensitive          as CI
 import           Data.HashMap.Strict            ( HashMap )
 import qualified Data.HashMap.Strict           as Map
@@ -88,12 +87,12 @@ instance Pushable HttpResponse where
     push HttpResponse {..} = withTable $ do
         "version" ~> show resHttpVersion
         "status_code" ~> resStatusCode
-        "status" ~> join " " (show resStatusCode) (LB.unpack resStatusText)
+        "status" ~> unwords [show resStatusCode, T.unpack resStatusText]
         "headers" ~> mkHeaderMap resHeaders
         "body" ~> (either error id (eitherDecode' resBody) :: Value)
         where join sep a b = a <> sep <> b
 
-mkHeaderMap :: HTTP.RequestHeaders -> HashMap String String
+mkHeaderMap :: [HTTP.Header] -> HashMap String String
 mkHeaderMap = Map.fromListWith (\a b -> b <> ", " <> a) . map unpackHeader
     where unpackHeader (k, v) = (B.unpack (CI.foldedCase k), B.unpack v)
 

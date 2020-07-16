@@ -15,7 +15,7 @@ import           Text.Megaparsec.Char
 
 type Parser = Parsec Void Text
 
-parseHeaders :: Parser HTTP.RequestHeaders
+parseHeaders :: Parser [HTTP.Header]
 parseHeaders = sepEndBy parseHeader eol
 
 parseHeader :: Parser HTTP.Header
