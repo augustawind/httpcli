@@ -38,6 +38,7 @@ import           Restcli.Scripting              ( runScript )
 import           Restcli.Types
 import           Restcli.Utils                  ( tokenize
                                                 , unsnoc
+                                                , whenMaybe
                                                 )
 
 type App = ReaderT Options (StateT AppState IO)
@@ -115,14 +116,12 @@ cmdRun path save = do
         Left  err -> fail $ displayException err
         Right req -> do
             res <- liftIO $ sendRequest req
-            case reqScript req of
-                Nothing     -> return ()
-                Just script -> do
-                    execScript script req res
-                    when save $ asks optEnvFile >>= \case
-                        Nothing -> return ()
-                        Just fp -> gets appEnv >>= liftIO . saveEnv fp
-            return $ (B.pack . pshow) res
+            whenMaybe (reqScript req) $ \script -> do
+                execScript script req res
+                when save $ asks optEnvFile >>= \case
+                    Nothing -> return ()
+                    Just fp -> gets appEnv >>= liftIO . saveEnv fp
+            return $ Yaml.encode res
 
 execScript :: Text -> HttpRequest -> HttpResponse -> App ()
 execScript script req res =

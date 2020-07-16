@@ -1,11 +1,12 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE QuasiQuotes #-}
 module Restcli.Utils
-    ( snoc
-    , unsnoc
-    , between
-    , tokenize
-    )
+  ( snoc
+  , unsnoc
+  , between
+  , tokenize
+  , whenMaybe
+  )
 where
 
 import           Data.List                      ( intercalate )
@@ -25,9 +26,13 @@ between l r xs = l : xs ++ [r]
 
 tokenize :: String -> [String]
 tokenize s = getAllTextMatches (s =~ tokenRegex)
-  where
-    tokenRegex  = intercalate "|" . map (between '(' ')') $ parts
-    parts       = [unquotedTok, quotedTok, quotedTok']
-    unquotedTok = [r|(?:[^"'\s\\]|\\.)(?:[^\s\\]|\\.)*|]
-    quotedTok   = [r|"(?:[^"\\]|\\.)*"|]
-    quotedTok'  = [r|'(?:[^'\\]|\\.)*'|]
+ where
+  tokenRegex  = intercalate "|" . map (between '(' ')') $ parts
+  parts       = [unquotedTok, quotedTok, quotedTok']
+  unquotedTok = [r|(?:[^"'\s\\]|\\.)(?:[^\s\\]|\\.)*|]
+  quotedTok   = [r|"(?:[^"\\]|\\.)*"|]
+  quotedTok'  = [r|'(?:[^'\\]|\\.)*'|]
+
+whenMaybe :: Applicative f => Maybe a -> (a -> f ()) -> f ()
+whenMaybe Nothing  _ = pure ()
+whenMaybe (Just x) f = f x

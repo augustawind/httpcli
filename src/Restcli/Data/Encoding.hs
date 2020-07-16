@@ -16,6 +16,7 @@ import           Data.Maybe                     ( fromJust )
 import           Data.Text                      ( Text )
 import qualified Data.Text                     as T
 import           Data.Text.Encoding             ( decodeUtf8 )
+import qualified Data.Text.Lazy.Encoding       as TL
 import           Data.Vector                    ( Vector )
 import qualified Data.Vector                   as V
 import qualified Data.Yaml                     as Yaml
@@ -67,6 +68,15 @@ instance ToJSON RequestAttr where
     toJSON (ReqHeaders headers) = toJSON headers
     toJSON (ReqBody    body   ) = toJSON body
 
+instance ToJSON HttpResponse where
+    toJSON HttpResponse {..} = object
+        [ "http_version" .= show resHttpVersion
+        , "status" .= T.unwords [T.pack . show $ resStatusCode, resStatusText]
+        , "status_code" .= resStatusCode
+        , "headers" .= encodeHeaders resHeaders
+        , "body" .= TL.decodeUtf8 resBody
+        ]
+
 encodeHeaders :: [HTTP.Header] -> Text
 encodeHeaders = T.unlines . map encodeHeader
   where
@@ -74,8 +84,6 @@ encodeHeaders = T.unlines . map encodeHeader
         let nameParts = T.split (== '-') . decodeUtf8 $ CI.original name
             name'     = T.intercalate "-" $ map toTitleCase nameParts
         in  T.concat [name', ": ", decodeUtf8 value]
-
-toTitleCase :: Text -> Text
-toTitleCase word = case T.uncons word of
-    Just (first, rest) -> toTitle first `T.cons` T.map toLower rest
-    Nothing            -> word
+    toTitleCase word = case T.uncons word of
+        Just (x, xs) -> toTitle x `T.cons` T.map toLower xs
+        Nothing      -> word
