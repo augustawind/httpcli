@@ -7,6 +7,9 @@ module Restcli.Error
 where
 
 import           Control.Exception
+import           Control.Monad.Writer           ( execWriter
+                                                , tell
+                                                )
 import           Data.ByteString.Char8          ( ByteString )
 import           Data.List                      ( intercalate )
 import           Data.Text                      ( Text )
@@ -17,7 +20,7 @@ import           Text.Megaparsec.Error
 import qualified Text.Parsec.Error             as Parsec.Error
 
 import           Restcli.Types
-import           Restcli.Utils                  ( between )
+import           Restcli.Utils                  ( whenMaybe )
 
 type DataPath = [Text]
 
@@ -36,15 +39,10 @@ instance Exception Error where
     displayException (APISpecError kind msg) =
         chain ["invalid " ++ show kind, msg]
     displayException (APILookupError keys expected found) =
-        let msg =
-                    chain
-                        [ between '\'' '\'' $ fmtDataPath keys
-                        , show expected ++ " not found"
-                        ]
-        in  case found of
-                Nothing -> msg
-                Just actual ->
-                    chain [msg, unwords ["found", show actual, "instead"]]
+        chain . execWriter $ do
+            tell ["'" ++ fmtDataPath keys ++ "'", show expected ++ " not found"]
+            whenMaybe found
+                $ \actual -> tell ["found " ++ show actual ++ " instead"]
     displayException (EnvLookupError key) =
         "key '" ++ T.unpack key ++ "' not found"
     displayException (TemplateError err) = show err

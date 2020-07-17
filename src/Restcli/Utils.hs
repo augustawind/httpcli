@@ -3,7 +3,6 @@
 module Restcli.Utils
   ( snoc
   , unsnoc
-  , between
   , tokenize
   , whenMaybe
   )
@@ -21,17 +20,13 @@ unsnoc :: [a] -> ([a], a)
 unsnoc [] = error "empty list"
 unsnoc xs = (init xs, last xs)
 
-between :: a -> a -> [a] -> [a]
-between l r xs = l : xs ++ [r]
-
 tokenize :: String -> [String]
 tokenize s = getAllTextMatches (s =~ tokenRegex)
  where
-  tokenRegex  = intercalate "|" . map (between '(' ')') $ parts
-  parts       = [unquotedTok, quotedTok, quotedTok']
-  unquotedTok = [r|(?:[^"'\s\\]|\\.)(?:[^\s\\]|\\.)*|]
-  quotedTok   = [r|"(?:[^"\\]|\\.)*"|]
-  quotedTok'  = [r|'(?:[^'\\]|\\.)*'|]
+  tokenRegex   = intercalate "|" [word, doubleQuoted, singleQuoted]
+  word         = [r|((?:[^"'\s\\]|\\.)(?:[^\s\\]|\\.)*)|]
+  doubleQuoted = [r|("(?:[^"\\]|\\.)*")|]
+  singleQuoted = [r|('(?:[^'\\]|\\.)*')|]
 
 whenMaybe :: Applicative f => Maybe a -> (a -> f ()) -> f ()
 whenMaybe Nothing  _ = pure ()

@@ -98,22 +98,10 @@ initAppState opts = do
 -- | Execute the App's command, found in its Options.
 dispatch :: App ByteString
 dispatch = ask >>= \opts -> case optCommand opts of
-    CmdRun path -> do
-        ret <- cmdRun (toText path) (optSave opts)
-        -- <DEBUG>
-        AppState { appAPI = api, appEnv = env, ..} <- get
-        let section name = liftIO $ putStrLn $ unlines [replicate 25 '-', name]
-        section "API"
-        liftIO $ B.putStrLn (Yaml.encode api)
-        section "ENV"
-        liftIO $ B.putStrLn (Yaml.encode env)
-        section "PROGRAM OUTPUT"
-        -- </DEBUG>
-        return ret
-    CmdView path      -> cmdView (toText path)
+    CmdRun  path      -> cmdRun (map T.pack path) (optSave opts)
+    CmdView path      -> cmdView (map T.pack path)
     CmdEnv path value -> cmdEnv (fmap T.pack path) (fmap B.pack value)
     CmdRepl histfile  -> cmdRepl histfile
-    where toText = map T.pack
 
 -- | Execute the `run` command.
 cmdRun :: [Text] -> Bool -> App ByteString
