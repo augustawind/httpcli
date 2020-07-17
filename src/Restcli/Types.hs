@@ -3,7 +3,9 @@
 module Restcli.Types where
 
 import           Control.Monad.Catch            ( SomeException )
+import           Data.Aeson                     ( FromJSON )
 import qualified Data.Aeson                    as Aeson
+import           Data.ByteString.Char8          ( ByteString )
 import qualified Data.ByteString.Lazy.Char8    as LB
 import           Data.Char                      ( isAlpha )
 import           Data.HashMap.Strict.InsOrd     ( InsOrdHashMap )
@@ -13,7 +15,8 @@ import           GHC.Generics                   ( Generic )
 import qualified Network.HTTP.Types            as HTTP
 import           Text.URI                       ( URI(..) )
 
-type YamlParser = Either Yaml.ParseException
+decodeYaml :: FromJSON a => ByteString -> Either Yaml.ParseException a
+decodeYaml = Yaml.decodeEither'
 
 ------------------------------------------------------------------------
 -- API documents.
@@ -67,8 +70,8 @@ data APIComponentKind
 
 instance Show APIComponentKind where
     show GroupKind               = "Group"
-    show RequestKind             = "HttpRequest"
-    show (RequestAttrKind attrT) = "HttpRequest '" ++ show attrT ++ "'"
+    show RequestKind             = "Request"
+    show (RequestAttrKind attrT) = "Request `" ++ show attrT ++ "`"
 
 -- TODO: add script to all these
 data RequestAttr

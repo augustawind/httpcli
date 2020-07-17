@@ -5,6 +5,9 @@
 module Restcli.App where
 
 import           Control.Exception              ( displayException )
+import           Control.Monad.Catch            ( catch
+                                                , throwM
+                                                )
 import           Control.Monad.Reader
 import           Control.Monad.State.Strict
 import           Data.ByteString.Char8          ( ByteString )
@@ -18,7 +21,12 @@ import qualified Data.Text                     as T
 import qualified Data.Text.Lazy                as LT
 import qualified Data.Yaml                     as Yaml
 import           Options.Applicative            ( handleParseResult )
-import           System.Console.Haskeline
+import           System.Console.Haskeline       ( InputT(..)
+                                                , Settings(..)
+                                                , defaultSettings
+                                                , getInputLine
+                                                , runInputT
+                                                )
 import           System.Directory               ( XdgDirectory(..)
                                                 , canonicalizePath
                                                 , createDirectoryIfMissing
@@ -55,38 +63,37 @@ replPrompt = "> "
 -- | Run the main program.
 -- This is a convenience wrapper that runs `dispatch` and prints the result.
 run :: IO ()
-run = runApp $ dispatch >>= liftIO . B.putStrLn
+run = runApp dispatch >>= liftIO . B.putStrLn
 
 -- | Run the given App with context obtained from the commandline.
 --
 -- 1. Obtains Options from the commandline.
 -- 2. Loads initial AppState.
 -- 3. Calls `runAppWith` with the Options and AppState.
-runApp :: App a -> IO a
+runApp :: App ByteString -> IO ByteString
 runApp app = do
-    opts     <- getEnvironment >>= parseCLI
-    appState <- initAppState opts
-    runAppWith app opts appState
+    opts <- getEnvironment >>= parseCLI
+    initAppState opts >>= \case
+        Left  err      -> return $ renderError err
+        Right appState -> runAppWith app opts appState
 
 -- | Run the given App with the given Options and AppState.
-runAppWith :: App a -> Options -> AppState -> IO a
-runAppWith app opts = evalStateT (runReaderT app opts)
+runAppWith :: App ByteString -> Options -> AppState -> IO ByteString
+runAppWith app opts appState =
+    evalStateT (runReaderT app opts) appState `catch` (return . renderError)
 
 -- | Create an initial AppState by reading Template & Env files and compiling
 -- an API object from them.
-initAppState :: Options -> IO AppState
+initAppState :: Options -> IO (Either Error AppState)
 initAppState opts = do
     let apiFile = optAPIFile opts
     tmpl <- readAPITemplate apiFile
     env  <- case optEnvFile opts of
         Just filePath -> readEnv filePath
         Nothing       -> return $ Env OrdMap.empty
-    case parseAPI tmpl env apiFile of
-        Left  err -> fail $ displayException err
-        Right api -> return AppState { appAPI         = api
-                                     , appEnv         = env
-                                     , appAPITemplate = tmpl
-                                     }
+    return $ do
+        api <- parseAPI tmpl env apiFile
+        Right AppState { appAPI = api, appEnv = env, appAPITemplate = tmpl }
 
 -- | Execute the App's command, found in its Options.
 dispatch :: App ByteString
@@ -114,7 +121,7 @@ cmdRun path save = do
     api <- gets appAPI
     let (groupKeys, reqKey) = unsnoc path
     case getAPIRequest groupKeys reqKey api of
-        Left  err -> fail $ displayException err
+        Left  err -> throwM . WithMsg err =<< asks optAPIFile
         Right req -> do
             res <- liftIO $ sendRequest req
             whenMaybe (reqScript req) $ \script -> do
@@ -138,8 +145,7 @@ cmdView path = do
         Right (APIGroup       group) -> return $ Yaml.encode group
         Right (APIRequest     req  ) -> return $ Yaml.encode req
         Right (APIRequestAttr attr ) -> return $ Yaml.encode attr
-        Left err ->
-            fail . displayException . withFilePath err =<< asks optAPIFile
+        Left  err                    -> throwM . WithMsg err =<< asks optAPIFile
 
 
 -- | Execute the `env` command.
@@ -149,9 +155,7 @@ cmdEnv (Just key) Nothing = do
     env <- gets appEnv
     case lookupEnv key env of
         Right value -> return $ Yaml.encode value
-        Left  err   -> do
-            err' <- maybe err (withFilePath err) <$> asks optEnvFile
-            fail . displayException $ err'
+        Left  err   -> throwM =<< maybe err (WithMsg err) <$> asks optEnvFile
 cmdEnv (Just key) (Just text) = do
     env   <- gets appEnv
     value <- Yaml.decodeThrow text
@@ -188,8 +192,9 @@ repl = getInputLine replPrompt >>= \case
             let argv = tokenize s
             sysenv <- getEnvironment
             opts   <- handleParseResult $ parseCLICommand argv sysenv
-            state  <- initAppState opts
-            runAppWith dispatch opts state >>= B.putStrLn
+            initAppState opts
+                >>= either (return . renderError) (runAppWith dispatch opts)
+                >>= B.putStrLn
         repl
 
 -- | Reload the App's Env.
@@ -210,7 +215,7 @@ reloadAPI = do
     env     <- gets appEnv
     apiFile <- asks optAPIFile
     case parseAPI tmpl env apiFile of
-        Left  err -> fail $ displayException err
+        Left  err -> throwM err
         Right api -> do
             modify' $ \appState -> appState { appAPI = api }
             return api
@@ -221,6 +226,9 @@ reloadAPITemplate = do
     tmpl <- asks optAPIFile >>= liftIO . readAPITemplate
     modify' $ \appState -> appState { appAPITemplate = tmpl }
     return tmpl
+
+renderError :: Error -> ByteString
+renderError = B.pack . displayException . (`WithMsg` (progName ++ ": error"))
 
 pprint :: Show a => a -> IO ()
 pprint = PP.pPrintOpt PP.NoCheckColorTty prettyOptions

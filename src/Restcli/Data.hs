@@ -4,6 +4,7 @@
 module Restcli.Data where
 
 import           Control.Monad                  ( foldM )
+import           Control.Monad.Catch            ( throwM )
 import           Data.Aeson
 import qualified Data.HashMap.Strict.InsOrd    as OrdMap
 import           Data.List                      ( intercalate )
@@ -26,9 +27,9 @@ import           Restcli.Utils                  ( snoc
 parseAPI :: Template -> Env -> FilePath -> Either Error API
 parseAPI tmpl (Env env) fp =
     let rendered = encodeUtf8 . substitute tmpl . OrdMap.toHashMap $ env
-        parsed   = Yaml.decodeEither' rendered :: YamlParser API
+        parsed   = decodeYaml rendered
     in  case parsed of
-            Left  err -> Left $ YamlError err `withFilePath` fp
+            Left  err -> Left $ YamlError err `WithMsg` fp
             Right api -> return api
 
 getAPIComponent
@@ -101,7 +102,7 @@ readAPITemplate path = do
     compiled <- automaticCompile [apiDir] apiFileName
     case compiled of
         Left err ->
-            errorFail $ TemplateError err `WithMsg` "failed to compile API"
+            throwM $ TemplateError err `WithMsg` "failed to compile API"
         Right tmpl -> return tmpl
 
 lookupEnv :: Text -> Env -> Either Error Value
@@ -116,7 +117,7 @@ readEnv :: FilePath -> IO Env
 readEnv path = do
     decoded <- Yaml.decodeFileEither path
     case decoded of
-        Left  err -> errorFail $ YamlError err `withFilePath` path
+        Left  err -> throwM $ YamlError err `WithMsg` path
         Right env -> return env
 
 saveEnv :: FilePath -> Env -> IO ()

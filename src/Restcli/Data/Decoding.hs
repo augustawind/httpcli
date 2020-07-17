@@ -4,6 +4,9 @@ module Restcli.Data.Decoding
     ()
 where
 
+import           Control.Exception              ( Exception
+                                                , displayException
+                                                )
 import           Data.Aeson
 import           Data.Aeson.Types               ( JSONPathElement(..)
                                                 , Parser
@@ -58,19 +61,19 @@ instance FromJSON ReqNode where
 parseRequest :: Object -> Parser HttpRequest
 parseRequest obj
     | not . null $ missingKeys
-    = errorFail
+    = parseFail
         .  APISpecError RequestKind
         $  "missing required key(s) "
         ++ unitems missingKeys
     | not . null $ unknownKeys
-    = errorFail
+    = parseFail
         .  APISpecError RequestKind
         $  "extra key(s) "
         ++ unitems unknownKeys
     | otherwise
     = let encoded = Yaml.encode obj
-          decoded = Yaml.decodeEither' encoded :: YamlParser HttpRequest
-      in  either (fail . show) return decoded
+          decoded = decodeYaml encoded
+      in  either parseFail return decoded
   where
     missingKeys = requiredReqKeys \\ Map.keys obj
     unknownKeys = Map.keys obj \\ reqKeys
@@ -84,14 +87,14 @@ instance FromJSON HTTP.StdMethod where
     parseJSON = withText "method" $ \method ->
         case readEither . map toUpper $ T.unpack method of
             Left err ->
-                errorFail $ errReqAttr ReqMethodT method "method not recognized"
+                parseFail $ errReqAttr ReqMethodT method "method not recognized"
             Right method -> return method
 
 instance FromJSON URI where
     parseJSON = withText "uri" $ \uri ->
         case runParser (URI.parser :: Parsec Void Text URI) "" uri of
             Left err ->
-                errorFail
+                parseFail
                     $           errReqAttr ReqUrlT uri ""
                     `WithCause` ParsecError err
             Right val -> return val
@@ -112,20 +115,17 @@ instance FromJSON RequestHeaders where
         -- auto-quotes header values, and allows multiple newlines between headers.
         case runParser parseHeaders "" headers of
             Left err ->
-                errorFail
+                parseFail
                     $           errReqAttr ReqHeadersT headers ""
                     `WithCause` ParsecError err
             Right val -> return . RequestHeaders $ val
 
 instance FromJSON RequestBody where
     -- TODO: allow for other body types
-    parseJSON = withText "json" $ \body ->
-        case Yaml.decodeEither' $ encodeUtf8 body :: YamlParser Value of
-            Left err ->
-                errorFail
-                    $           errReqAttr ReqBodyT body ""
-                    `WithCause` YamlError err
-            Right val -> return . RequestBody $ val
+    parseJSON = withText "json" $ \body -> case decodeYaml $ encodeUtf8 body of
+        Left err ->
+            parseFail $ errReqAttr ReqBodyT body "" `WithCause` YamlError err
+        Right val -> return . RequestBody $ val
 
 errReqAttr :: RequestAttrKind -> Text -> String -> Error
 errReqAttr kind actual msg =
@@ -145,3 +145,6 @@ instance FromJSON Env where
 parseOrdMap :: (FromJSON v) => Vector Value -> Parser (InsOrdHashMap Text v)
 parseOrdMap vec =
     OrdMap.fromList . concatMap Map.toList . V.toList <$> V.mapM parseJSON vec
+
+parseFail :: Exception e => e -> Parser a
+parseFail = fail . displayException
