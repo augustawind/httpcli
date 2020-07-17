@@ -1,7 +1,5 @@
 # TODO
 
-- [x] Implement REPL
-    - [ ] gracefully handle errors (don't crash)
 - [ ] support other body types (currently only JSON is supported)
 
 ## Improvements

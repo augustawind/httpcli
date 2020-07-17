@@ -12,6 +12,7 @@ import           Data.Aeson              hiding ( Options )
 import           Data.Bifunctor                 ( second )
 import qualified Data.ByteString.Char8         as B
 import qualified Data.CaseInsensitive          as CI
+import           Data.Functor                   ( (<&>) )
 import           Data.HashMap.Strict            ( HashMap )
 import qualified Data.HashMap.Strict           as Map
 import           Data.HashMap.Strict.InsOrd     ( InsOrdHashMap )
@@ -37,23 +38,25 @@ import           Restcli.Types
 
 runScript :: Text -> HttpRequest -> HttpResponse -> Env -> IO (Maybe Env)
 runScript script req res env = liftIO . Lua.run $ do
+    -- Initialize the Lua environment.
     Lua.openlibs
     Lua.dostring (B.pack "math.randomseed(os.time()); math.random();")
         >>= assertOK
     Lua.push (Context req res env) *> Lua.setglobal' "ctx"
+
+    -- Run the script.
     Lua.dostring (encodeUtf8 script) >>= assertOK
 
+    -- Retrieve Env and merge in any changes.
     Lua.getglobal "ctx"
-    ctx <- Lua.peek =<< Lua.gettop :: Lua.Lua (HashMap String Value)
-    return $ case Map.lookup "env" ctx of
-        Just (Object hm) ->
-            let (Env t1) = env
-                t2       = OrdMap.fromHashMap hm
-                merge    = OrdMap.unionWith (curry snd)
-            in  Just $ Env (merge t1 t2)
-        _ -> Nothing
+    ctx <- Lua.peek =<< Lua.gettop :: Lua.Lua (HashMap String Value) -- TODO: can this safely be read into an actual Context?
+    return $ Map.lookup "env" ctx <&> \(Object hm) ->
+        let (Env old) = env
+            new       = OrdMap.fromHashMap hm
+        in  Env $ merge old new
   where
     assertOK status = when (status /= Lua.OK) $ Lua.peek 1 >>= liftIO . fail
+    merge = OrdMap.unionWith (curry snd)
 
 data Context = Context
     { ctxRequest :: HttpRequest
