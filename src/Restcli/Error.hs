@@ -44,7 +44,7 @@ instance Exception Error where
             whenMaybe found
                 $ \actual -> tell ["found " ++ show actual ++ " instead"]
     displayException (EnvLookupError key) =
-        "key '" ++ T.unpack key ++ "' not found"
+        chain ['\'' : T.unpack key ++ "'", "key not found"]
     displayException (TemplateError err) = show err
     displayException (ParsecError   err) = errorBundlePretty err
     displayException (YamlError     err) = case err of

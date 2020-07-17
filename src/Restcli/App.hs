@@ -1,12 +1,12 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 
 module Restcli.App where
 
 import           Control.Exception              ( displayException )
 import           Control.Monad.Catch            ( catch
                                                 , throwM
+                                                , try
                                                 )
 import           Control.Monad.Reader
 import           Control.Monad.State.Strict
@@ -33,6 +33,7 @@ import           System.Directory               ( XdgDirectory(..)
                                                 , getXdgDirectory
                                                 )
 import           System.Environment             ( getEnvironment )
+import           System.Exit                    ( ExitCode )
 import           System.FilePath                ( (</>) )
 import           Text.Mustache                  ( Template )
 import qualified Text.Pretty.Simple            as PP
@@ -176,13 +177,15 @@ repl :: InputT IO ()
 repl = getInputLine replPrompt >>= \case
     Nothing -> return ()
     Just s  -> do
-        liftIO $ do
-            let argv = tokenize s
-            sysenv <- getEnvironment
-            opts   <- handleParseResult $ parseCLICommand argv sysenv
-            initAppState opts
-                >>= either (return . renderError) (runAppWith dispatch opts)
-                >>= B.putStrLn
+        sysenv <- liftIO getEnvironment
+        let argv   = tokenize s
+            result = handleParseResult $ parseCLICommand argv sysenv
+        liftIO $ (try result :: IO (Either ExitCode Options)) >>= \case
+            Left _ -> return ()
+            Right opts ->
+                initAppState opts
+                    >>= either (return . renderError) (runAppWith dispatch opts)
+                    >>= B.putStrLn
         repl
 
 -- | Reload the App's Env.
