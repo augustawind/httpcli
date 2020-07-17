@@ -34,22 +34,24 @@ type Environ = [(String, String)]
 progName :: String
 progName = "httpcli"
 
-parseCLI :: Environ -> IO Options
-parseCLI = execParser . cli
+parseArgs :: Environ -> IO Options
+parseArgs = execParser . parserInfo
 
-parseCLICommand :: [String] -> Environ -> ParserResult Options
-parseCLICommand argv environ = execParserPure parserPrefs (cli environ) argv
+parseArgsPure :: [String] -> Environ -> ParserResult Options
+parseArgsPure argv environ = execParserPure parserPrefs
+                                            (parserInfo environ)
+                                            argv
   where parserPrefs = prefs $ showHelpOnEmpty <> showHelpOnError
 
-cli :: Environ -> ParserInfo Options
-cli environ = info
-  (cliOptions environ <**> helper)
+parserInfo :: Environ -> ParserInfo Options
+parserInfo environ = info
+  (parser environ <**> helper)
   (fullDesc <> header
     (progName ++ " - a command-line HTTP client for API development")
   )
 
-cliOptions :: Environ -> Parser Options
-cliOptions environ = do
+parser :: Environ -> Parser Options
+parser environ = do
   optCommand <- (subparser . foldMap mkCommand)
     [ ( "run"
       , "run a request"
@@ -102,7 +104,7 @@ cliOptions environ = do
     <> short 'a'
     <> envvar "HTTPCLI_API" environ
     <> metavar "PATH"
-    <> help "path to an API spec file"
+    <> help "API spec file"
     )
   optEnvFile <- optional $ option
     nonEmptyStr
@@ -110,7 +112,7 @@ cliOptions environ = do
     <> short 'e'
     <> envvar "HTTPCLI_ENV" environ
     <> metavar "PATH"
-    <> help "path to an Environment file"
+    <> help "Environment file"
     )
   optSave <- switch
     (long "save" <> short 's' <> help

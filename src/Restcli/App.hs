@@ -39,7 +39,11 @@ import           Text.Mustache                  ( Template )
 import qualified Text.Pretty.Simple            as PP
 
 import           Restcli.Data
-import           Restcli.CLI
+import           Restcli.CLI                    ( Command(..)
+                                                , Options(..)
+                                                , progName
+                                                )
+import qualified Restcli.CLI                   as CLI
 import           Restcli.Data.Encoding
 import           Restcli.Error
 import           Restcli.Requests
@@ -73,7 +77,7 @@ run = runApp dispatch >>= liftIO . B.putStrLn
 -- 3. Calls `runAppWith` with the Options and AppState.
 runApp :: App ByteString -> IO ByteString
 runApp app = do
-    opts <- getEnvironment >>= parseCLI
+    opts <- getEnvironment >>= CLI.parseArgs
     initAppState opts >>= \case
         Left  err      -> return $ renderError err
         Right appState -> runAppWith app opts appState
@@ -179,9 +183,9 @@ repl = getInputLine replPrompt >>= \case
     Just s  -> do
         sysenv <- liftIO getEnvironment
         let argv   = tokenize s
-            result = handleParseResult $ parseCLICommand argv sysenv
+            result = handleParseResult $ CLI.parseArgsPure argv sysenv
         liftIO $ (try result :: IO (Either ExitCode Options)) >>= \case
-            Left _ -> return ()
+            Left _ -> putStrLn ""
             Right opts ->
                 initAppState opts
                     >>= either (return . renderError) (runAppWith dispatch opts)
