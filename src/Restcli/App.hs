@@ -140,7 +140,6 @@ cmdView path = do
         Right (APIRequestAttr attr ) -> return $ Yaml.encode attr
         Left  err                    -> throwM . WithMsg err =<< asks optAPIFile
 
-
 -- | Execute the `env` command.
 cmdEnv :: Maybe Text -> Maybe ByteString -> App ByteString
 cmdEnv Nothing    _       = Yaml.encode <$> gets appEnv
