@@ -2,7 +2,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TupleSections #-}
 
 module Restcli.CLI where
 

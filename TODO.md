@@ -1,6 +1,7 @@
 # TODO
 
 - [ ] support other body types (currently only JSON is supported)
+- [ ] add test suite
 
 ## Improvements
 
